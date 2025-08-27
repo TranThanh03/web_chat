@@ -1,0 +1,20 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+    session:
+      tracking-modes: cookie
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 20MB
+      file-size-threshold: 1KB
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin
+
+app:
+  name: chat
+  description: Du an Spring Boot website chat
+  version: 1.0.0
