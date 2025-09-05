@@ -3,25 +3,28 @@ package com.example.chat.entity;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
 
-@Document(collection = "rooms")
+@Document(collection = "conversations")
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Room {
+public class Conversation {
     @Id
     String id;
 
-    @Field("code")
+    @Indexed(unique = true)
     String code;
 
-    @Field("messages")
-    List<Message> messages;
+    String name;
+    List<String> participants;
+    String type;
+    Long createdAt;
+    Long updatedAt;
 }

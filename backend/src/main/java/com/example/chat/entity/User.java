@@ -4,40 +4,28 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
-@Document(collection = "customers")
+import java.util.List;
+
+@Document(collection = "users")
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Customer {
+public class User {
     @Id
     String id;
 
-    @Field("code")
     String code;
-
-    @Field("full-name")
     String fullName;
-
-    @Field("phone")
+    String avatar;
     String phone;
-
-    @Field("email")
     String email;
-
-    @Field("password")
     String password;
-
-    @Field("roles")
-    String roles;
-
-    @Field("registered-time")
+    List<String> roles;
     Long registeredTime;
-
-    @Field("status")
-    String status;
+    String accountStatus;
+    String presenceStatus;
 }

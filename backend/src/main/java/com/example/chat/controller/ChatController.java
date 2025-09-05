@@ -21,12 +21,12 @@ import org.springframework.web.bind.annotation.*;
 public class ChatController {
     ChatService chatService;
 
-    @MessageMapping("/send-message/{id}")
-    @SendTo("/topic/room/{id}")
+    @MessageMapping("/send-message/{roomId}")
+    @SendTo("/topic/room/{roomId}")
     public MessageResponse sendMessage(
-            @DestinationVariable String id,
+            @DestinationVariable String roomId,
             @RequestBody MessageRequest request) {
 
-        return chatService.sendMessage(id, request);
+        return chatService.sendMessage(roomId, request);
     }
 }
