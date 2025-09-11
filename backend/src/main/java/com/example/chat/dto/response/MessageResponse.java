@@ -2,6 +2,7 @@ package com.example.chat.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.annotation.Id;
 
 @Data
 @NoArgsConstructor
@@ -9,7 +10,10 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MessageResponse {
+    String id;
+    String senderId;
     String content;
-    String sender;
+    String media;
     Long timeStamp;
+    String status;
 }

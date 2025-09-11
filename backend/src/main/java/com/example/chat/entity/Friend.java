@@ -6,34 +6,26 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
+import java.time.Instant;
 
-@Document(collection = "users")
+@Document(collection = "friends")
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class User {
+public class Friend {
     @Id
     String id;
 
-    @Indexed(unique = true)
-    String code;
+    String userId;
+    String friendId;
+    String status;
+    String actionUserId;
+    Long createdAt;
+    Long updatedAt;
 
-    String fullName;
-    String avatar;
-
-    @Indexed(unique = true)
-    String phone;
-
-    @Indexed(unique = true)
-    String email;
-
-    String password;
-    List<String> roles;
-    Long registeredTime;
-    String accountStatus;
-    String presenceStatus;
+    @Indexed(expireAfterSeconds = 0)
+    Instant expireAt;
 }

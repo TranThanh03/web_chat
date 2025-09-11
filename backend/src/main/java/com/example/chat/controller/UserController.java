@@ -21,8 +21,8 @@ public class UserController {
     @PostMapping()
     ResponseEntity<ApiResponse<String>> createUser(@Valid @RequestBody UserRequest request) {
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1300)
-                .message("Tạo mới khách hàng thành công.")
+                .code(1100)
+                .message("Tạo mới người dùng thành công.")
                 .result(userService.createUser(request).getId())
                 .build();
 

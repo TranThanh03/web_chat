@@ -17,4 +17,7 @@ public class MessageRequest {
     String senderId;
 
     String content;
+
+    @NotNull(message = "NOT_NULL")
+    String media;
 }

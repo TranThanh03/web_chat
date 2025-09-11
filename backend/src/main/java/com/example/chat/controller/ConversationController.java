@@ -1,7 +1,10 @@
 package com.example.chat.controller;
 
+import com.example.chat.dto.request.AddParticipantsRequest;
 import com.example.chat.dto.request.ConversationRequest;
 import com.example.chat.dto.response.ApiResponse;
+import com.example.chat.exception.AppException;
+import com.example.chat.exception.ErrorCode;
 import com.example.chat.service.ConversationService;
 import jakarta.validation.Valid;
 import lombok.*;
@@ -20,14 +23,50 @@ public class ConversationController {
 
     @PostMapping()
     ResponseEntity<ApiResponse<String>> createConversation(@Valid @RequestBody ConversationRequest request) {
+        String creatorId = "68b81abc6a8a294a1a9d2256";
+
+        if(!request.getParticipants().contains(creatorId)) {
+            throw new AppException(ErrorCode.CREATOR_INVALID);
+        }
+
+        String conversationId = conversationService.createConversation(request).getId();
+
+        if (request.getParticipants().size() > 2) {
+            conversationService.groupCreationEvents(conversationId, creatorId, request.getParticipants());
+        }
+
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1100)
+                .code(1200)
                 .message("Thêm hội thoại mới thành công.")
-                .result(conversationService.createConversation(request).getId())
+                .result(conversationId)
                 .build();
 
         return ResponseEntity.ok(apiResponse);
     }
 
+    @PostMapping("/{conversationId}/add")
+    ResponseEntity<ApiResponse<String>> addUserToGroup(@PathVariable String conversationId, @Valid @RequestBody AddParticipantsRequest request) {
+        String addPersonId = "`68b81abc6a8a294a1a9d2256`";
 
+        conversationService.addUserToGroupEvents(conversationId, addPersonId, request.getParticipants());
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1201)
+                .message("Thêm người tham gia mới thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/{conversationId}/join")
+    ResponseEntity<ApiResponse<String>> joinGroup(@PathVariable String conversationId, @RequestParam String userId) {
+        conversationService.joinGroupEvents(conversationId, userId);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1202)
+                .message("Tham gia nhóm thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
 }

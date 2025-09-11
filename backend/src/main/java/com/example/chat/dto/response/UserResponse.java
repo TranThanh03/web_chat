@@ -1,36 +1,22 @@
-package com.example.chat.entity;
+package com.example.chat.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
-
-@Document(collection = "users")
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class User {
-    @Id
+public class UserResponse {
     String id;
-
-    @Indexed(unique = true)
     String code;
-
     String fullName;
     String avatar;
-
-    @Indexed(unique = true)
     String phone;
-
-    @Indexed(unique = true)
     String email;
-
     String password;
     List<String> roles;
     Long registeredTime;
