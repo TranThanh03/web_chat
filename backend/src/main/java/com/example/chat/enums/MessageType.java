@@ -1,6 +1,6 @@
 package com.example.chat.enums;
 
-public enum MediaType {
+public enum MessageType {
     TEXT,
     IMAGE,
     VIDEO,

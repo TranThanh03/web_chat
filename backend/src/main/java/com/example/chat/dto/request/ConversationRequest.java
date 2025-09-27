@@ -16,6 +16,6 @@ public class ConversationRequest {
     String name;
 
     @NotEmpty(message = "NOT_EMPTY")
-    @Size(min = 2, message = "PARTICIPANT_SIZE_INVALID")
+    @Size(min = 1, message = "PARTICIPANT_SIZE_INVALID")
     List<String> participants;
 }

@@ -17,22 +17,21 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@CrossOrigin("http://localhost:5173")
 public class ConversationController {
     ConversationService conversationService;
 
     @PostMapping()
     ResponseEntity<ApiResponse<String>> createConversation(@Valid @RequestBody ConversationRequest request) {
-        String creatorId = "68b81abc6a8a294a1a9d2256";
+        String ownerId = "68b81abc6a8a294a1a9d2256";
 
-        if(!request.getParticipants().contains(creatorId)) {
+        if(request.getParticipants().contains(ownerId)) {
             throw new AppException(ErrorCode.CREATOR_INVALID);
         }
 
-        String conversationId = conversationService.createConversation(request).getId();
+        String conversationId = conversationService.createConversation(ownerId, request).getId();
 
         if (request.getParticipants().size() > 2) {
-            conversationService.groupCreationEvents(conversationId, creatorId, request.getParticipants());
+            conversationService.groupCreationEvents(conversationId, ownerId, request.getParticipants());
         }
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()

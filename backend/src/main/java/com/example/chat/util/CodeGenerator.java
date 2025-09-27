@@ -1,8 +1,9 @@
 package com.example.chat.util;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 
-public class ShortCodeGenerator {
+public class CodeGenerator {
     private static final String BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
     private static String base62Encode(long value) {
@@ -17,11 +18,17 @@ public class ShortCodeGenerator {
         return sb.reverse().toString();
     }
 
-    public static String generateShortCodeFromUUID() {
+    public static String generateShortCode() {
         UUID uuid = UUID.randomUUID();
         long l = uuid.getMostSignificantBits();
 
         return base62Encode(l);
     }
-}
 
+    public static String generateNumericCode() {
+        SecureRandom random = new SecureRandom();
+        int number = 100000 + random.nextInt(900000);
+
+        return String.valueOf(number);
+    }
+}

@@ -4,16 +4,18 @@ import com.example.chat.entity.Friend;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface FriendRepository extends MongoRepository<Friend, String> {
-    @Query("{ $or: [ " +
-            "{ 'userId': ?0, 'friendId': ?1, 'actionUserId': ?0 }, " +
-            "{ 'userId': ?1, 'friendId': ?0, 'status': { $ne: ?2 } } " +
-            "] }")
-    Optional<Friend> existsFriend(String userId, String friendId, String status);
+    boolean existsByUserIdAndFriendId(String userId, String friendId);
 
-    Friend findFriendByUserIdAndFriendIdAndStatus(String userId, String friendId, String status);
+    boolean existsByUserIdAndFriendIdAndStatusNot(String friendId, String userId, String status);
+
+    Friend findFriendByUserIdAndFriendIdAndStatus(String friendId, String userId, String status);
+
+    boolean existsByUserIdAndFriendIdAndStatus(String userId, String friendId, String status);
+
+    List<Friend> findByUserIdAndFriendIdInAndStatus(String userId, List<String> friends, String status);
 
     @Query("{ $or: [ " +
             "{ 'userId': ?0, 'friendId': ?1, 'status': ?2 }, " +
@@ -32,10 +34,4 @@ public interface FriendRepository extends MongoRepository<Friend, String> {
             "{ 'userId': ?1, 'friendId': ?0 } " +
             "] }")
     Friend findFriendByMultipleIds(String userId, String friendId);
-
-    @Query("{ $or: [ " +
-            "{ 'userId': ?0, 'friendId': ?1, 'status': ?2 }, " +
-            "{ 'userId': ?1, 'friendId': ?0, 'status': ?2 } " +
-            "] }")
-    Optional<Friend> areFriends(String userId, String friendId, String status);
 }

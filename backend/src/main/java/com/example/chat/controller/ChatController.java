@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@CrossOrigin("http://localhost:5173")
 public class ChatController {
     ChatService chatService;
 

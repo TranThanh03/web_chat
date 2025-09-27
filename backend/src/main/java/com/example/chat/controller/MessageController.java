@@ -16,7 +16,6 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@CrossOrigin("http://localhost:5173")
 public class MessageController {
     MessageService messageService;
 

@@ -18,7 +18,7 @@ public class FriendController {
 
     @PostMapping("/{friendId}/send")
     ResponseEntity<ApiResponse<String>> sendFriend(@PathVariable String friendId) {
-        String userId = "68b9e0b0babfe04dac6fb502";
+        String userId = "68b81abc6a8a294a1a9d2256";
 
         friendService.sendFriend(userId, friendId);
 
@@ -30,9 +30,9 @@ public class FriendController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PatchMapping("/{userId}/accept")
-    ResponseEntity<ApiResponse<String>> acceptFriend(@PathVariable String userId) {
-        String friendId = "68b9e0b0babfe04dac6fb502";
+    @PatchMapping("/{friendId}/accept")
+    ResponseEntity<ApiResponse<String>> acceptFriend(@PathVariable String friendId) {
+        String userId = "68b9e0b0babfe04dac6fb502";
 
         friendService.acceptFriend(userId, friendId);
 
@@ -44,9 +44,9 @@ public class FriendController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PatchMapping("/{userId}/reject")
-    ResponseEntity<ApiResponse<String>> rejectFriend(@PathVariable String userId) {
-        String friendId = "68b81abc6a8a294a1a9d2256";
+    @PatchMapping("/{friendId}/reject")
+    ResponseEntity<ApiResponse<String>> rejectFriend(@PathVariable String friendId) {
+        String userId = "68b81abc6a8a294a1a9d2256";
 
         friendService.rejectFriend(userId, friendId);
 

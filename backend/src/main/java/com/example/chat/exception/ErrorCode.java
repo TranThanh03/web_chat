@@ -16,7 +16,7 @@ public enum ErrorCode {
 
     TOKEN_INVALID(1005, "Token invalid!", HttpStatus.BAD_REQUEST),
 
-    NOT_NULL(1006, "Không được bỏ trống!", HttpStatus.BAD_REQUEST),
+    NOT_BLANK(1006, "Không được bỏ trống!", HttpStatus.BAD_REQUEST),
 
     NOT_EMPTY(1007, "Không được rỗng!", HttpStatus.BAD_REQUEST),
 
@@ -34,7 +34,11 @@ public enum ErrorCode {
 
     USER_NOT_EXITED(1014, "Người dùng không tồn tại!", HttpStatus.BAD_REQUEST),
 
-    PARTICIPANT_SIZE_INVALID(1012, "Số người tham gia tối thiểu từ 2 người!", HttpStatus.BAD_REQUEST),
+    LOGIN_FAILED(1014, "Tài khoản hoặc mật khẩu không đúng!", HttpStatus.BAD_REQUEST),
+
+    ACCOUNT_BANNED(1014, "Tài khoản này đã bị khóa bởi hệ thống!", HttpStatus.BAD_REQUEST),
+
+    PARTICIPANT_SIZE_INVALID(1012, "Số người tham gia tối thiểu từ 1 người!", HttpStatus.BAD_REQUEST),
 
     PARTICIPANT_INVALID(1013, "Người tham gia không hợp lệ!", HttpStatus.BAD_REQUEST),
 
@@ -50,6 +54,8 @@ public enum ErrorCode {
 
     CONVERSATION_NOT_EXITED(1020, "Hội thoại không tồn tại!", HttpStatus.NOT_FOUND),
 
+    MESSAGE_ID_INVALID(1020, "Id tin nhắn không hợp lệ!", HttpStatus.BAD_REQUEST),
+
     CANNOT_SEND_FRIEND(1020, "Không thể gửi lời kết bạn!", HttpStatus.BAD_REQUEST),
 
     CANNOT_ACCEPT_FRIEND(1020, "Không thể kết bạn!", HttpStatus.BAD_REQUEST),
@@ -64,7 +70,7 @@ public enum ErrorCode {
 
     CANNOT_UNBLOCK_FRIEND(1020, "Không thể bỏ chặn người dùng!", HttpStatus.BAD_REQUEST),
 
-    MESSAGE_ID_INVALID(1020, "Id tin nhắn không hợp lệ!", HttpStatus.BAD_REQUEST);
+    NOT_FRIENDS(1020, "Không phải là bạn bè!", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

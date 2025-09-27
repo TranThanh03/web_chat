@@ -17,7 +17,11 @@ public class Message {
     String conversationId;
     String senderId;
     String content;
-    String media;
+    String type;
+    String actionType;
+    String actorId;
+    String targetId;
+    String extraData;
     Long timeStamp;
     String status;
 }

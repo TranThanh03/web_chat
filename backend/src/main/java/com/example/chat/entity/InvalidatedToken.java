@@ -6,26 +6,19 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
+import java.time.Instant;
 
-@Document(collection = "conversations")
+@Document(collection = "tokens")
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Conversation {
+public class InvalidatedToken {
     @Id
     String id;
 
-    @Indexed(unique = true)
-    String code;
-
-    String name;
-    String ownerId;
-    List<String> participants;
-    String type;
-    Long createdAt;
-    Long updatedAt;
+    @Indexed(expireAfterSeconds = 0)
+    Instant expiryTime;
 }

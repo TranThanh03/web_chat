@@ -15,7 +15,21 @@ spring:
       uri: mongodb://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin
       auto-index-creation: true
 
+jwt:
+  signerKey: ${JWT_SIGNER_KEY}
+
+google:
+  apiBaseUrl: ${GG_API_BASE_URL}
+  clientId: ${GG_CLIENT_ID}
+  clientSecret: ${GG_CLIENT_SECRET}
+  redirectUrl: ${GG_REDIRECT_URI}
+  grantType: ${GG_GRANT_TYPE}
+  oauth2BaseUrl: ${GG_OAUTH2_BASE_URL}
+
+base:
+  url: ${BASE_URL}
+
 app:
   name: chat
-  description: Du an Spring Boot website chat
+  description: Project Spring Boot website chat
   version: 1.0.0

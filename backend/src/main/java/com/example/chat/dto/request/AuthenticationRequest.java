@@ -9,15 +9,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MessageRequest {
+public class AuthenticationRequest {
     @NotBlank(message = "NOT_BLANK")
-    String conversationId;
+    String username;
 
     @NotBlank(message = "NOT_BLANK")
-    String senderId;
-
-    String content;
-
-    @NotBlank(message = "NOT_BLANK")
-    String type;
+    String password;
 }

@@ -13,7 +13,11 @@ public class MessageResponse {
     String id;
     String senderId;
     String content;
-    String media;
+    String type;
+    String actionType;
+    String actorId;
+    String targetId;
+    String extraData;
     Long timeStamp;
     String status;
 }
