@@ -2,6 +2,7 @@ package com.example.chat.service;
 
 import com.example.chat.dto.request.AuthenticationRequest;
 import com.example.chat.dto.request.ExchangeTokenRequest;
+import com.example.chat.dto.request.UserCreationRequest;
 import com.example.chat.dto.response.AuthenticationResponse;
 import com.example.chat.entity.InvalidatedToken;
 import com.example.chat.entity.User;
@@ -27,6 +28,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
@@ -91,14 +93,13 @@ public class AuthenticationService {
             throw new AppException(ErrorCode.ACCOUNT_BANNED);
         }
 
-        return generateToken(request.getUsername(), user);
+        return generateToken(user);
     }
 
-    private String generateToken(String username, User user) {
+    private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(username)
                 .issuer(DomainUtil.extractDomain(BASE_URL))
                 .issueTime(new Date())
                 .expirationTime(Date.from(
@@ -131,8 +132,25 @@ public class AuthenticationService {
                 .grantType(GRANT_TYPE)
                 .build());
 
+        var userInfo = outboundUserClient.getUserInfo("json", response.getAccessToken());
+        User user = userService.getUserByEmail(userInfo.getEmail());
+
+        if (user == null) {
+            user = userService.createUser(UserCreationRequest.builder()
+                            .fullName(userInfo.getName())
+                            .email(userInfo.getEmail())
+                            .avatar(userInfo.getPicture())
+                    .build());
+        } else {
+            if (user.getAccountStatus().equals(AccountStatus.INACTIVATE.name())) {
+                user.setAccountStatus(AccountStatus.ACTIVATE.name());
+                userService.saveUser(user);
+            }
+        }
+
         return AuthenticationResponse.builder()
-                .token(response.getAccessToken())
+                .token(generateToken(user))
+                .noPassword(StringUtils.hasText(user.getPassword()) ? false : true)
                 .build();
     }
 
@@ -172,7 +190,7 @@ public class AuthenticationService {
         var verified= signedJWT.verify(verifier);
 
         if (!(verified && expityTime.after(new Date()))) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            return null;
         }
 
         if(invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
@@ -184,7 +202,7 @@ public class AuthenticationService {
         return signedJWT;
     }
 
-    public String getIdByToken(String token) {
+    public String getIdUserByToken(String token) {
         try {
             var signToken = verifyToken(token);
 

@@ -4,35 +4,39 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
 public enum ErrorCode {
-    TOKEN_NOT_EXITED(4449, "Token không tồn tại!", HttpStatus.BAD_REQUEST),
+    TOKEN_NOT_EXITED(1001, "Token không tồn tại!", HttpStatus.BAD_REQUEST),
 
-    SERVER_ERROR(1001, "Server error!", HttpStatus.INTERNAL_SERVER_ERROR),
+    SERVER_ERROR(1002, "Server error!", HttpStatus.INTERNAL_SERVER_ERROR),
 
-    UNCATEGORIZED_EXCEPTION(1002, "Uncategorized error!", HttpStatus.BAD_REQUEST),
+    UNCATEGORIZED_EXCEPTION(1003, "Uncategorized error!", HttpStatus.BAD_REQUEST),
 
-    UNAUTHENTICATED(1003, "Unauthenticated!", HttpStatus.UNAUTHORIZED),
+    UNAUTHENTICATED(1004, "Unauthenticated!", HttpStatus.UNAUTHORIZED),
 
-    UNAUTHORIZED(1004, "Unauthorized!", HttpStatus.FORBIDDEN),
+    UNAUTHORIZED(1005, "Unauthorized!", HttpStatus.FORBIDDEN),
 
-    TOKEN_INVALID(1005, "Token invalid!", HttpStatus.BAD_REQUEST),
+    TOKEN_INVALID(1006, "Token invalid!", HttpStatus.BAD_REQUEST),
 
-    NOT_BLANK(1006, "Không được bỏ trống!", HttpStatus.BAD_REQUEST),
+    NOT_BLANK(1007, "Không được bỏ trống!", HttpStatus.BAD_REQUEST),
 
-    NOT_EMPTY(1007, "Không được rỗng!", HttpStatus.BAD_REQUEST),
+    NOT_EMPTY(1008, "Không được rỗng!", HttpStatus.BAD_REQUEST),
 
-    FULLNAME_LENGTH_INVALID(1008, "Tên có độ dài khoảng từ 5 đến 100 ký tự!", HttpStatus.BAD_REQUEST),
+    FULLNAME_LENGTH_INVALID(1009, "Tên có độ dài khoảng từ 5 đến 100 ký tự!", HttpStatus.BAD_REQUEST),
 
-    FULLNAME_INVALID(1009,"Tên không chứa số hoặc ký tự đặc biệt!", HttpStatus.BAD_REQUEST),
+    FULLNAME_INVALID(1010,"Tên không chứa số hoặc ký tự đặc biệt!", HttpStatus.BAD_REQUEST),
 
     PHONE_INVALID(1010, "Số điện thoại không đúng định dạng!", HttpStatus.BAD_REQUEST),
 
     EMAIL_INVALID(1011, "Email không đúng định dạng!", HttpStatus.BAD_REQUEST),
+
+    PASSWORD_INVALID(1011, "Mật khẩu có độ dài từ 8 ký tự trở lên!", HttpStatus.BAD_REQUEST),
 
     PHONE_EXISTED(1012, "Số điện thoại đã tồn tại!", HttpStatus.BAD_REQUEST),
 
     EMAIL_EXISTED(1013, "Email đã tồn tại!", HttpStatus.BAD_REQUEST),
 
     USER_NOT_EXITED(1014, "Người dùng không tồn tại!", HttpStatus.BAD_REQUEST),
+
+    PASSWORD_EXISTED(1014, "Mật khẩu đã tồn tại!", HttpStatus.BAD_REQUEST),
 
     LOGIN_FAILED(1014, "Tài khoản hoặc mật khẩu không đúng!", HttpStatus.BAD_REQUEST),
 

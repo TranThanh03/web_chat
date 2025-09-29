@@ -28,17 +28,19 @@ public class AuthenticationController {
     protected String BASE_URL;
 
     @PostMapping("/login")
-    public ApiResponse<String> authenticate(@Valid @RequestBody AuthenticationRequest request) {
+    public ApiResponse<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) {
 
 //        if (!recaptchaService.verifyCB(request.getRecaptcha())) {
 //            throw new AppException(ErrorCode.RECAPTCHA_FAILED);
 //        }
 
-        String jwtToken = authenticationService.authenticate(request);
+        String token = authenticationService.authenticate(request);
 
-        return ApiResponse.<String>builder()
+        return ApiResponse.<AuthenticationResponse>builder()
                 .code(1500)
-                .result(jwtToken)
+                .result(AuthenticationResponse.builder()
+                        .token(token)
+                        .build())
                 .message("Đăng nhập thành công.")
                 .build();
     }

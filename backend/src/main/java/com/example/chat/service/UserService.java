@@ -1,6 +1,7 @@
 package com.example.chat.service;
 
-import com.example.chat.dto.request.UserRequest;
+import com.example.chat.dto.request.PasswordCreationRequest;
+import com.example.chat.dto.request.UserCreationRequest;
 import com.example.chat.entity.User;
 import com.example.chat.enums.AccountStatus;
 import com.example.chat.enums.PresenceStatus;
@@ -19,6 +20,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.text.Normalizer;
 import java.util.List;
@@ -34,7 +36,7 @@ public class UserService {
             maxAttempts = 5,
             backoff = @Backoff(delay = 100, multiplier = 2)
     )
-    public User createUser(UserRequest request) {
+    public User createUser(UserCreationRequest request) {
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.PHONE_EXISTED);
         }
@@ -44,22 +46,38 @@ public class UserService {
         }
 
         User user = new User();
-
         user.setCode(generateCode(request.getFullName()));
-        user.setFullName(request.getFullName().trim());
-        user.setAvatar(request.getAvatar().trim());
+        user.setFullName(request.getFullName());
+        user.setAvatar(request.getAvatar());
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
         user.setRoles(List.of(Role.USER.name()));
 
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+        if (StringUtils.hasText(request.getPassword())) {
+            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setAccountStatus(AccountStatus.INACTIVATE.name());
+        } else {
+            user.setAccountStatus(AccountStatus.ACTIVATE.name());
+        }
 
         user.setRegisteredTime(TimeUtils.toUnixMillisUtcNow());
-        user.setAccountStatus(AccountStatus.INACTIVATE.name());
         user.setPresenceStatus(PresenceStatus.OFFLINE.name());
 
         return userRepository.save(user);
+    }
+
+    public void createPassword(String id, PasswordCreationRequest request) {
+        User user = getUserById(id);
+
+        if (StringUtils.hasText(user.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_EXISTED);
+        }
+
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        userRepository.save(user);
     }
 
     public User getUserById(String id) {
@@ -93,6 +111,10 @@ public class UserService {
 
     public boolean isCustomerBanned(String id) {
         return userRepository.existsByIdAndAccountStatus(id, AccountStatus.BANNED.name());
+    }
+
+    public void saveUser(User user) {
+        userRepository.save(user);
     }
 
     private static String generateCode(String fullName) {

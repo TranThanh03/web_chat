@@ -32,7 +32,7 @@ public class ChatService {
         Message message = new Message();
         message.setConversationId(conversationId);
         message.setSenderId(request.getSenderId());
-        message.setContent(request.getContent().trim());
+        message.setContent(request.getContent());
 
         MessageType type = MEDIA_MAP.getOrDefault(request.getType(), MessageType.TEXT);
         message.setType(type.name());
