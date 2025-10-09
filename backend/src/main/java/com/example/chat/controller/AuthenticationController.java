@@ -40,6 +40,7 @@ public class AuthenticationController {
                 .code(1500)
                 .result(AuthenticationResponse.builder()
                         .token(token)
+                        .noPassword(false)
                         .build())
                 .message("Đăng nhập thành công.")
                 .build();

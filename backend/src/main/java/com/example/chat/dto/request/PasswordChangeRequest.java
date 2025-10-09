@@ -10,8 +10,12 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PasswordCreationRequest {
+public class PasswordChangeRequest {
     @NotBlank(message = "NOT_BLANK")
-    @Size(min = 8, message = "PASSWORD_INVALID")
-    String password;
+    @Size(min = 8, max = 40, message = "PASSWORD_INVALID")
+    String currentPassword;
+
+    @NotBlank(message = "NOT_BLANK")
+    @Size(min = 8, max = 40, message = "PASSWORD_INVALID")
+    String newPassword;
 }

@@ -7,5 +7,6 @@ public enum ActionType {
     JOIN_GROUP,
     ADD_MEMBER,
     REMOVE_MEMBER,
-    LEAVE_GROUP
+    LEAVE_GROUP,
+    DISBAND_GROUP
 }

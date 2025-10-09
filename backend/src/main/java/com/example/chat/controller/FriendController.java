@@ -1,11 +1,13 @@
 package com.example.chat.controller;
 
+import com.example.chat.configuration.CustomSecurity;
 import com.example.chat.dto.response.ApiResponse;
 import com.example.chat.service.FriendService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,10 +17,14 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FriendController {
     FriendService friendService;
+    CustomSecurity customSecurity;
 
     @PostMapping("/{friendId}/send")
-    ResponseEntity<ApiResponse<String>> sendFriend(@PathVariable String friendId) {
-        String userId = "68b81abc6a8a294a1a9d2256";
+    ResponseEntity<ApiResponse<String>> sendFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.sendFriend(userId, friendId);
 
@@ -31,8 +37,11 @@ public class FriendController {
     }
 
     @PatchMapping("/{friendId}/accept")
-    ResponseEntity<ApiResponse<String>> acceptFriend(@PathVariable String friendId) {
-        String userId = "68b9e0b0babfe04dac6fb502";
+    ResponseEntity<ApiResponse<String>> acceptFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.acceptFriend(userId, friendId);
 
@@ -45,8 +54,11 @@ public class FriendController {
     }
 
     @PatchMapping("/{friendId}/reject")
-    ResponseEntity<ApiResponse<String>> rejectFriend(@PathVariable String friendId) {
-        String userId = "68b81abc6a8a294a1a9d2256";
+    ResponseEntity<ApiResponse<String>> rejectFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.rejectFriend(userId, friendId);
 
@@ -59,8 +71,11 @@ public class FriendController {
     }
 
     @DeleteMapping("/{friendId}/cancel")
-    ResponseEntity<ApiResponse<String>> cancelFriend(@PathVariable String friendId) {
-        String userId = "68b9e0b0babfe04dac6fb502";
+    ResponseEntity<ApiResponse<String>> cancelFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.cancelFriend(userId, friendId);
 
@@ -73,8 +88,11 @@ public class FriendController {
     }
 
     @DeleteMapping("/{friendId}/unfriend")
-    ResponseEntity<ApiResponse<String>> unFriend(@PathVariable String friendId) {
-        String userId = "68b9e0b0babfe04dac6fb502";
+    ResponseEntity<ApiResponse<String>> unFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.unFriend(userId, friendId);
 
@@ -87,8 +105,11 @@ public class FriendController {
     }
 
     @PostMapping("/{friendId}/block")
-    ResponseEntity<ApiResponse<String>> blockFriend(@PathVariable String friendId) {
-        String userId = "68b9e0b0babfe04dac6fb502";
+    ResponseEntity<ApiResponse<String>> blockFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.blockFriend(userId, friendId);
 
@@ -101,8 +122,11 @@ public class FriendController {
     }
 
     @DeleteMapping("/{friendId}/unblock")
-    ResponseEntity<ApiResponse<String>> unBlockFriend(@PathVariable String friendId) {
-        String userId = "68b9e0b0babfe04dac6fb502";
+    ResponseEntity<ApiResponse<String>> unBlockFriend(
+            Authentication authentication,
+            @PathVariable String friendId) {
+
+        String userId = customSecurity.getUserId(authentication);
 
         friendService.unBlockFriend(userId, friendId);
 

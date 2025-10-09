@@ -28,6 +28,7 @@ google:
 
 base:
   url: ${BASE_URL}
+  defaultAvatarUrl: ${DEFAULT_AVATAR_URL}
 
 app:
   name: chat

@@ -35,7 +35,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_SEND_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         if (friendRepository.existsByUserIdAndFriendId(userId, friendId) || friendRepository.existsByUserIdAndFriendIdAndStatusNot(friendId, userId, FriendStatus.REJECTED.name())) {
             throw new AppException(ErrorCode.CANNOT_SEND_FRIEND);
@@ -58,7 +58,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_ACCEPT_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(friendId, userId, FriendStatus.PENDING.name());
 
@@ -95,7 +95,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_REJECT_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(friendId, userId, FriendStatus.PENDING.name());
 
@@ -115,7 +115,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_CANCEL_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(userId, friendId, FriendStatus.PENDING.name());
 
@@ -132,7 +132,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_UNFRIEND_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         DeleteResult result = deleteFriends(userId, friendId);
 
@@ -146,7 +146,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_BLOCK_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         deleteFriends(userId, friendId);
 
@@ -167,7 +167,7 @@ public class FriendService {
             throw new AppException(ErrorCode.CANNOT_UNBLOCK_FRIEND);
         }
 
-        userService.validateActiveUserExists(friendId);
+        userService.verifyActiveAccount(friendId);
 
         Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(userId, friendId, FriendStatus.BLOCKED.name());
 

@@ -1,16 +1,16 @@
 package com.example.chat.controller;
 
-import com.example.chat.dto.request.PasswordCreationRequest;
-import com.example.chat.dto.request.UserCreationRequest;
+import com.example.chat.configuration.CustomSecurity;
+import com.example.chat.dto.request.*;
 import com.example.chat.dto.response.ApiResponse;
 import com.example.chat.service.AuthenticationService;
 import com.example.chat.service.UserService;
-import com.example.chat.util.TokenUtils;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     UserService userService;
-    AuthenticationService authenticationService;
+    CustomSecurity customSecurity;
 
     @PostMapping()
     ResponseEntity<ApiResponse<String>> createUser(@Valid @RequestBody UserCreationRequest request) {
@@ -34,15 +34,84 @@ public class UserController {
     }
 
     @PostMapping("/create-password")
-    ResponseEntity<ApiResponse<String>> createUser(@RequestHeader("Authorization") String authHeader, @Valid @RequestBody PasswordCreationRequest request) {
-        String token = TokenUtils.extractToken(authHeader);
-        String id = authenticationService.getIdUserByToken(token);
+    ResponseEntity<ApiResponse<String>> createUser(
+            Authentication authentication,
+            @Valid @RequestBody PasswordRequest request) {
+
+        String id = customSecurity.getUserId(authentication);
 
         userService.createPassword(id, request);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1101)
                 .message("Tạo mật khẩu thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/active")
+    ResponseEntity<ApiResponse<String>> activeAccount(
+            Authentication authentication) {
+
+        String id = customSecurity.getUserId(authentication);
+
+        userService.activeAccount(id);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1102)
+                .message("Kích hoạt tài khoản thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/update-info")
+    ResponseEntity<ApiResponse<String>> updateUserInfo(
+            Authentication authentication,
+            @Valid @RequestBody UserInfoUpdateRequest request) {
+
+        String id = customSecurity.getUserId(authentication);
+
+        userService.updateUserInfo(id, request);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1102)
+                .message("Cập nhật thông tin người dùng thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/update-contact")
+    ResponseEntity<ApiResponse<String>> updateUserContact(
+            Authentication authentication,
+            @Valid @RequestBody UserContactUpdateRequest request) {
+
+        String id = customSecurity.getUserId(authentication);
+
+        userService.updateUserContact(id, request);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1103)
+                .message("Cập nhật thông tin liên hệ thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/change-password")
+    ResponseEntity<ApiResponse<String>> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody PasswordChangeRequest request) {
+
+        String id = customSecurity.getUserId(authentication);
+
+        userService.changePassword(id, request);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1104)
+                .message("Cập nhật mật khẩu mới thành công.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);

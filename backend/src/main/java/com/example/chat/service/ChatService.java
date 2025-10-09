@@ -28,10 +28,10 @@ public class ChatService {
             "file",  MessageType.FILE
     );
 
-    public MessageResponse sendMessage(String conversationId, MessageRequest request) {
+    public MessageResponse sendMessage(String conversationId, String senderId, MessageRequest request) {
         Message message = new Message();
         message.setConversationId(conversationId);
-        message.setSenderId(request.getSenderId());
+        message.setSenderId(senderId);
         message.setContent(request.getContent());
 
         MessageType type = MEDIA_MAP.getOrDefault(request.getType(), MessageType.TEXT);

@@ -1,6 +1,8 @@
 package com.example.chat.dto.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,12 +11,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserCreationRequest {
-    @NotBlank(message = "NOT_BLANK")
-    @Size(min = 5, max = 40, message = "FULLNAME_LENGTH_INVALID")
-    @Pattern(regexp = "^[\\p{L} ]+$", message = "FULLNAME_INVALID")
-    String fullName;
-
+public class UserContactUpdateRequest {
     @NotBlank(message = "NOT_BLANK")
     @Pattern(regexp = "^(\\+84|0)(3|5|7|8|9)\\d{8}$", message = "PHONE_INVALID")
     String phone;
@@ -22,8 +19,4 @@ public class UserCreationRequest {
     @NotBlank(message = "NOT_BLANK")
     @Email(message = "EMAIL_INVALID")
     String email;
-
-    @NotBlank(message = "NOT_BLANK")
-    @Size(min = 8, max = 40, message = "PASSWORD_INVALID")
-    String password;
 }

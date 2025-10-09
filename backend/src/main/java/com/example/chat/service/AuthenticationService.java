@@ -2,7 +2,7 @@ package com.example.chat.service;
 
 import com.example.chat.dto.request.AuthenticationRequest;
 import com.example.chat.dto.request.ExchangeTokenRequest;
-import com.example.chat.dto.request.UserCreationRequest;
+import com.example.chat.dto.request.UserCreationOutboundRequest;
 import com.example.chat.dto.response.AuthenticationResponse;
 import com.example.chat.entity.InvalidatedToken;
 import com.example.chat.entity.User;
@@ -22,7 +22,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,7 +38,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Slf4j
 public class AuthenticationService {
     UserService userService;
     InvalidatedTokenRepository invalidatedTokenRepository;
@@ -100,13 +98,14 @@ public class AuthenticationService {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(user.getFullName())
                 .issuer(DomainUtil.extractDomain(BASE_URL))
                 .issueTime(new Date())
                 .expirationTime(Date.from(
                         Instant.now().plusSeconds(3600)
                 ))
                 .jwtID(UUID.randomUUID().toString())
-                .claim("id", user.getId())
+                .claim("userId", user.getId())
                 .claim("scope", buildScope(user))
                 .build();
 
@@ -136,7 +135,7 @@ public class AuthenticationService {
         User user = userService.getUserByEmail(userInfo.getEmail());
 
         if (user == null) {
-            user = userService.createUser(UserCreationRequest.builder()
+            user = userService.createUserOutbound(UserCreationOutboundRequest.builder()
                             .fullName(userInfo.getName())
                             .email(userInfo.getEmail())
                             .avatar(userInfo.getPicture())
@@ -148,9 +147,11 @@ public class AuthenticationService {
             }
         }
 
+        boolean noPassword = StringUtils.hasText(user.getPassword()) ? false : true;
+
         return AuthenticationResponse.builder()
                 .token(generateToken(user))
-                .noPassword(StringUtils.hasText(user.getPassword()) ? false : true)
+                .noPassword(noPassword)
                 .build();
     }
 
@@ -184,7 +185,7 @@ public class AuthenticationService {
 
         SignedJWT signedJWT = SignedJWT.parse(token);
 
-        String id = signedJWT.getJWTClaimsSet().getClaim("id").toString();
+        String userId = signedJWT.getJWTClaimsSet().getClaim("userId").toString();
         Date expityTime = signedJWT.getJWTClaimsSet().getExpirationTime();
 
         var verified= signedJWT.verify(verifier);
@@ -195,21 +196,11 @@ public class AuthenticationService {
 
         if(invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
-        } else if (userService.isCustomerBanned(id)) {
+        } else if (userService.isCustomerBanned(userId)) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         return signedJWT;
-    }
-
-    public String getIdUserByToken(String token) {
-        try {
-            var signToken = verifyToken(token);
-
-            return signToken.getJWTClaimsSet().getClaim("id").toString();
-        } catch (ParseException | JOSEException e) {
-            return null;
-        }
     }
 
     private String buildScope(User user) {

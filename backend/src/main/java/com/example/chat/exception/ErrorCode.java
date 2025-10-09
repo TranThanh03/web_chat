@@ -20,7 +20,7 @@ public enum ErrorCode {
 
     NOT_EMPTY(1008, "Không được rỗng!", HttpStatus.BAD_REQUEST),
 
-    FULLNAME_LENGTH_INVALID(1009, "Tên có độ dài khoảng từ 5 đến 100 ký tự!", HttpStatus.BAD_REQUEST),
+    FULLNAME_LENGTH_INVALID(1009, "Tên có độ dài khoảng từ 5 đến 40 ký tự!", HttpStatus.BAD_REQUEST),
 
     FULLNAME_INVALID(1010,"Tên không chứa số hoặc ký tự đặc biệt!", HttpStatus.BAD_REQUEST),
 
@@ -28,7 +28,7 @@ public enum ErrorCode {
 
     EMAIL_INVALID(1011, "Email không đúng định dạng!", HttpStatus.BAD_REQUEST),
 
-    PASSWORD_INVALID(1011, "Mật khẩu có độ dài từ 8 ký tự trở lên!", HttpStatus.BAD_REQUEST),
+    PASSWORD_INVALID(1011, "Mật khẩu có độ dài khoảng từ 8 đến 40 ký tự!", HttpStatus.BAD_REQUEST),
 
     PHONE_EXISTED(1012, "Số điện thoại đã tồn tại!", HttpStatus.BAD_REQUEST),
 
@@ -38,25 +38,39 @@ public enum ErrorCode {
 
     PASSWORD_EXISTED(1014, "Mật khẩu đã tồn tại!", HttpStatus.BAD_REQUEST),
 
+    PASSWORD_SAME_AS_OLD(1015, "Mật khẩu mới không được trùng với mật khẩu cũ!", HttpStatus.BAD_REQUEST),
+
+    INCORRECT_CURRENT_PASSWORD(1015, "Mật khẩu hiện tại không đúng!", HttpStatus.BAD_REQUEST),
+
     LOGIN_FAILED(1014, "Tài khoản hoặc mật khẩu không đúng!", HttpStatus.BAD_REQUEST),
+
+    ACCOUNT_NOT_ACTIVE(1014, "Tài khoản đang không hoạt động!", HttpStatus.BAD_REQUEST),
 
     ACCOUNT_BANNED(1014, "Tài khoản này đã bị khóa bởi hệ thống!", HttpStatus.BAD_REQUEST),
 
-    PARTICIPANT_SIZE_INVALID(1012, "Số người tham gia tối thiểu từ 1 người!", HttpStatus.BAD_REQUEST),
+    NAME_GROUP_LENGTH_INVALID(1012, "Tên nhóm có độ dài khoảng từ 3 đến 50 ký tự!", HttpStatus.BAD_REQUEST),
+
+    PARTICIPANT_GROUP_SIZE_INVALID(1012, "Số người tham gia tối thiểu từ 2 người!", HttpStatus.BAD_REQUEST),
 
     PARTICIPANT_INVALID(1013, "Người tham gia không hợp lệ!", HttpStatus.BAD_REQUEST),
 
-    CREATOR_INVALID(1020, "Người tạo hội thoại không hợp lệ!", HttpStatus.BAD_REQUEST),
+    CREATOR_CANNOT_BE_PARTICIPANT(1020, "Người tạo không được có trong danh sách người tham gia!", HttpStatus.BAD_REQUEST),
 
-    ADD_PERSON_INVALID(1021, "Người thêm không có trong nhóm hội thoại!", HttpStatus.NOT_FOUND),
+    ACTOR_CANNOT_BE_PARTICIPANT(1020, "Người thêm không được có trong danh sách người tham gia!", HttpStatus.BAD_REQUEST),
 
-    NEW_PARTICIPANTS_EMPTY(1022, "Danh sách người tham gia mới rỗng!", HttpStatus.BAD_REQUEST),
+    ACTOR_INVALID(1021, "Người thêm không có trong nhóm hội thoại!", HttpStatus.NOT_FOUND),
 
-    CANNOT_ADD_PARTICIPANT(1021, "Không thể thêm người dùng vào hội thoại!", HttpStatus.BAD_REQUEST),
+    PARTICIPANT_ALREADY_EXISTS(1022, "Danh sách người tham gia chứa người đã tham gia nhóm!", HttpStatus.BAD_REQUEST),
 
-    CANNOT_JOIN_GROUP(1021, "Không thể tham gia vào hội thoại!", HttpStatus.BAD_REQUEST),
+    SINGLE_CONVERSATION(2001, "Đây là hội thoại 1-1!", HttpStatus.BAD_REQUEST),
+
+    USER_ALREADY_IN_GROUP(1021, "Người dùng đã tham gia nhóm!", HttpStatus.BAD_REQUEST),
+
+    USER_NOT_IN_GROUP(1021, "Người dùng không có trong nhóm!", HttpStatus.BAD_REQUEST),
 
     CONVERSATION_NOT_EXITED(1020, "Hội thoại không tồn tại!", HttpStatus.NOT_FOUND),
+
+    CONVERSATION_EXITED(1020, "Hội thoại đã tồn tại!", HttpStatus.NOT_FOUND),
 
     MESSAGE_ID_INVALID(1020, "Id tin nhắn không hợp lệ!", HttpStatus.BAD_REQUEST),
 
