@@ -16,22 +16,4 @@ public interface FriendRepository extends MongoRepository<Friend, String> {
     boolean existsByUserIdAndFriendIdAndStatus(String userId, String friendId, String status);
 
     List<Friend> findByUserIdAndFriendIdInAndStatus(String userId, List<String> friends, String status);
-
-    @Query("{ $or: [ " +
-            "{ 'userId': ?0, 'friendId': ?1, 'status': ?2 }, " +
-            "{ 'userId': ?1, 'friendId': ?0, 'status': ?2 } " +
-            "] }")
-    Friend findFriendByMultipleIdsAndStatus(String userId, String friendId, String status);
-
-    @Query("{ $or: [ " +
-            "{ 'userId': ?0, 'friendId': ?1, 'status': { $ne: ?2} }, " +
-            "{ 'userId': ?1, 'friendId': ?0, 'status': { $ne: ?2} } " +
-            "] }")
-    Friend findFriendByMultipleIdsAndNotStatus(String userId, String friendId, String status);
-
-    @Query("{ $or: [ " +
-            "{ 'userId': ?0, 'friendId': ?1 }, " +
-            "{ 'userId': ?1, 'friendId': ?0 } " +
-            "] }")
-    Friend findFriendByMultipleIds(String userId, String friendId);
 }

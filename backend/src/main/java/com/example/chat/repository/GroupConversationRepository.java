@@ -7,6 +7,6 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface GroupConversationRepository extends MongoRepository<GroupConversation, String> {
-    @Query(value = "{ 'type': ?1, 'participant': { $all: ?0 } }", exists = true)
-    boolean existsByParticipantIdsAndType(List<String> participantIds, String type);
+    GroupConversation findByIdAndStatus(String id, String status);
+    GroupConversation findByCodeAndStatusAndIsPublic(String code, String status, boolean isPublic);
 }

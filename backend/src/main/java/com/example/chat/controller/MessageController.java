@@ -3,8 +3,7 @@ package com.example.chat.controller;
 import com.example.chat.configuration.CustomSecurity;
 import com.example.chat.dto.response.ApiResponse;
 import com.example.chat.dto.response.MessageResponse;
-import com.example.chat.service.MessageService;
-import com.example.chat.service.UserService;
+import com.example.chat.service.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,19 +22,21 @@ public class MessageController {
     MessageService messageService;
     CustomSecurity customSecurity;
     UserService userService;
+    ConversationService conversationService;
 
     @GetMapping("/{conversationId}/latest")
     ResponseEntity<ApiResponse<List<MessageResponse>>> getLatestMessages(
             Authentication authentication,
             @PathVariable String conversationId) {
 
-        String id = customSecurity.getUserId(authentication);
+        String userId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(userId);
 
-        userService.verifyActiveAccount(id);
+        conversationService.validateActiveMemberInConversation(conversationId, userId);
 
         ApiResponse<List<MessageResponse>> apiResponse = ApiResponse.<List<MessageResponse>>builder()
                 .code(1300)
-                .result(messageService.getLatestMessages(conversationId))
+                .result(messageService.getLatestMessages(conversationId, userId))
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -47,13 +48,14 @@ public class MessageController {
             @PathVariable String conversationId,
             @RequestParam String messageId) {
 
-        String id = customSecurity.getUserId(authentication);
+        String userId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(userId);
 
-        userService.verifyActiveAccount(id);
+        conversationService.validateActiveMemberInConversation(conversationId, userId);
 
         ApiResponse<List<MessageResponse>> apiResponse = ApiResponse.<List<MessageResponse>>builder()
                 .code(1301)
-                .result(messageService.getMoreMessages(conversationId, messageId))
+                .result(messageService.getMoreMessages(conversationId, messageId, userId))
                 .build();
 
         return ResponseEntity.ok(apiResponse);

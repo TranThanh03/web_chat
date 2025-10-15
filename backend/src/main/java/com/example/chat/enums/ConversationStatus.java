@@ -1,8 +1,7 @@
 package com.example.chat.enums;
 
-public enum GroupStatus {
+public enum ConversationStatus {
     ACTIVE,
-    DISBANDED,
     BLOCKED,
-    DELETED
+    DISBANDED
 }

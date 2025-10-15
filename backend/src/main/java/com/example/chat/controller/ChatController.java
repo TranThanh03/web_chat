@@ -8,6 +8,7 @@ import com.example.chat.service.UserService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class ChatController {
     ChatService chatService;
     CustomSecurity customSecurity;
@@ -27,11 +29,10 @@ public class ChatController {
     @SendTo("/topic/conversation/{conversationId}")
     public MessageResponse sendMessage(
             @DestinationVariable String conversationId,
-            Authentication authentication,
-            @RequestBody MessageRequest request) {
+            @RequestBody MessageRequest request,
+            Authentication authentication) {
 
         String senderId = customSecurity.getUserId(authentication);
-
         userService.verifyActiveAccount(senderId);
 
         return chatService.sendMessage(conversationId, senderId, request);

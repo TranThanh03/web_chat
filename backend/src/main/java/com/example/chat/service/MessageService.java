@@ -20,21 +20,45 @@ import java.util.List;
 public class MessageService {
     MessageRepository messageRepository;
     MessageMapper messageMapper;
+    UserConversationService userConversationService;
 
-    public List<MessageResponse> getLatestMessages(String conversationId) {
-        List<MessageResponse> messages = messageMapper.toMessageListResponse(messageRepository.findTop20ByConversationIdOrderByIdDesc(conversationId));
+    public List<MessageResponse> getLatestMessages(String conversationId, String userId) {
+        Long deletedAt = userConversationService.getDeletedAtByUserIdAndConversationId(userId, conversationId);
+
+        List<MessageResponse> messages;
+        if (deletedAt != null) {
+            messages = messageMapper.toMessageListResponse(
+                    messageRepository.findTop20ByConversationIdAndTimeStampGreaterThanOrderByIdDesc(conversationId, deletedAt)
+            );
+        } else {
+            messages = messageMapper.toMessageListResponse(
+                    messageRepository.findTop20ByConversationIdOrderByIdDesc(conversationId)
+            );
+        }
+
         Collections.reverse(messages);
-
         return messages;
     }
 
-    public List<MessageResponse> getMoreMessages(String conversationId, String messageId) {
+    public List<MessageResponse> getMoreMessages(String conversationId, String messageId, String userId) {
         try {
             ObjectId objectId = new ObjectId(messageId);
+            Long deletedAt = userConversationService.getDeletedAtByUserIdAndConversationId(userId, conversationId);
 
-            List<MessageResponse> messages = messageMapper.toMessageListResponse(messageRepository.findTop20ByConversationIdAndIdLessThanOrderByIdDesc(conversationId, objectId));
+            List<MessageResponse> messages;
+            if (deletedAt != null) {
+                messages = messageMapper.toMessageListResponse(
+                        messageRepository.findTop20ByConversationIdAndTimeStampGreaterThanAndIdLessThanOrderByIdDesc(
+                                conversationId, deletedAt, objectId
+                        )
+                );
+            } else {
+                messages = messageMapper.toMessageListResponse(
+                        messageRepository.findTop20ByConversationIdAndIdLessThanOrderByIdDesc(conversationId, objectId)
+                );
+            }
+
             Collections.reverse(messages);
-
             return messages;
         } catch (Exception e) {
             throw new AppException(ErrorCode.MESSAGE_ID_INVALID);

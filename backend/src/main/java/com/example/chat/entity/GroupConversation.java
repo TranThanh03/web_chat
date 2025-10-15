@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("GROUP")
 public class GroupConversation extends Conversation {
-    String name;
+    String groupName;
     String groupAvatar;
     List<Member> participants;
     boolean isPublic;

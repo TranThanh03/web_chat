@@ -4,30 +4,20 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "messages")
+@Document(collection = "user_conversations")
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@CompoundIndex(name = "conversationId_timestamp_idx", def = "{'conversationId': 1, 'timeStamp': -1}")
-public class Message {
+@CompoundIndex(name = "userId_conversationId_idx", def = "{'userId': 1, 'conversationId': 1}")
+public class UserConversation {
     @Id
     String id;
-
-    @Indexed
+    String userId;
     String conversationId;
-    String senderId;
-    String content;
-    String type;
-    String actionType;
-    String actorId;
-    String targetId;
-    String extraData;
-    Long timeStamp;
-    String status;
+    Long deletedAt;
 }

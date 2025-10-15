@@ -1,16 +1,11 @@
 package com.example.chat.controller;
 
 import com.example.chat.configuration.CustomSecurity;
-import com.example.chat.dto.request.AddParticipantsRequest;
-import com.example.chat.dto.request.GroupConversationRequest;
-import com.example.chat.dto.request.SingleConversationRequest;
+import com.example.chat.dto.request.*;
 import com.example.chat.dto.response.ApiResponse;
 import com.example.chat.exception.AppException;
 import com.example.chat.exception.ErrorCode;
-import com.example.chat.service.ConversationService;
-import com.example.chat.service.GroupConversationService;
-import com.example.chat.service.SingleConversationService;
-import com.example.chat.service.UserService;
+import com.example.chat.service.*;
 import jakarta.validation.Valid;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -29,11 +24,12 @@ public class ConversationController {
     GroupConversationService groupConversationService;
     CustomSecurity customSecurity;
     UserService userService;
+    UserConversationService userConversationService;
 
     @PostMapping("/single")
-    ResponseEntity<ApiResponse<String>> createConversation(
+    ResponseEntity<ApiResponse<String>> createSingle(
             Authentication authentication,
-            @Valid @RequestBody SingleConversationRequest request) {
+            @Valid @RequestBody UserIdRequest request) {
 
         String ownerId = customSecurity.getUserId(authentication);
         userService.verifyActiveAccount(ownerId);
@@ -50,7 +46,7 @@ public class ConversationController {
     }
 
     @PostMapping("/group")
-    ResponseEntity<ApiResponse<String>> createConversationGroup(
+    ResponseEntity<ApiResponse<String>> createGroup(
             Authentication authentication,
             @Valid @RequestBody GroupConversationRequest request) {
 
@@ -74,19 +70,19 @@ public class ConversationController {
     }
 
     @PostMapping("/group/{conversationId}/add")
-    ResponseEntity<ApiResponse<String>> addUserToGroup(
+    ResponseEntity<ApiResponse<String>> addMember(
             Authentication authentication,
             @PathVariable String conversationId,
-            @Valid @RequestBody AddParticipantsRequest request) {
+            @Valid @RequestBody ParticipantIdsRequest request) {
 
         String actorId = customSecurity.getUserId(authentication);
 
-        if(request.getParticipantsIds().contains(actorId)) {
+        if(request.getParticipantIds().contains(actorId)) {
             throw new AppException(ErrorCode.ACTOR_CANNOT_BE_PARTICIPANT);
         }
 
         userService.verifyActiveAccount(actorId);
-        groupConversationService.addUserToGroup(conversationId, actorId, request.getParticipantsIds());
+        groupConversationService.addMember(conversationId, actorId, request.getParticipantIds());
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1202)
@@ -96,14 +92,14 @@ public class ConversationController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PostMapping("/group/{conversationId}/join")
+    @PostMapping("/group/{conversationCode}/join")
     ResponseEntity<ApiResponse<String>> joinGroup(
             Authentication authentication,
-            @PathVariable String conversationId) {
+            @PathVariable String conversationCode) {
 
-        String userId = customSecurity.getUserId(authentication);
-        userService.verifyActiveAccount(userId);
-        groupConversationService.joinGroup(conversationId, userId);
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        groupConversationService.joinGroup(conversationCode, actorId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1203)
@@ -118,13 +114,107 @@ public class ConversationController {
             Authentication authentication,
             @PathVariable String conversationId) {
 
-        String userId = customSecurity.getUserId(authentication);
-        userService.verifyActiveAccount(userId);
-        groupConversationService.leaveGroup(conversationId, userId);
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        groupConversationService.leaveGroup(conversationId, actorId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1204)
                 .message("Rời nhóm thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/group/{conversationId}/remove-member")
+    ResponseEntity<ApiResponse<String>> removeMember(
+            Authentication authentication,
+            @PathVariable String conversationId,
+            @Valid @RequestBody UserIdRequest request) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        userService.verifyActiveAccount(request.getUserId());
+        groupConversationService.removeMember(conversationId, actorId, request.getUserId());
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1205)
+                .message("Xóa thành viên khỏi nhóm thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/group/{conversationId}/promote-admin")
+    ResponseEntity<ApiResponse<String>> promoteAdmin(
+            Authentication authentication,
+            @PathVariable String conversationId,
+            @Valid @RequestBody UserIdRequest request) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        userService.verifyActiveAccount(request.getUserId());
+        groupConversationService.promoteAdmin(conversationId, actorId, request.getUserId());
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1206)
+                .message("Thêm người dùng làm quản trị viên thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/{conversationId}/delete")
+    ResponseEntity<ApiResponse<String>> deleteConversation(
+            Authentication authentication,
+            @PathVariable String conversationId) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        conversationService.deleteConversation(conversationId, actorId);
+        userConversationService.handleUserConversation(UserConversationCreationRequest.builder()
+                .userId(actorId)
+                .conversationId(conversationId)
+                .build());
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1207)
+                .message("Xóa hội thoại thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/{conversationId}/restore")
+    ResponseEntity<ApiResponse<String>> restoreConversation(
+            Authentication authentication,
+            @PathVariable String conversationId) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        conversationService.restoreConversation(conversationId, actorId);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1208)
+                .message("Khôi phục hội thoại thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/group/{conversationId}/change-info")
+    ResponseEntity<ApiResponse<String>> changeInfoGroup(
+            Authentication authentication,
+            @PathVariable String conversationId,
+            @RequestBody GroupInfoUpdateRequest request) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        groupConversationService.changeInfoGroup(conversationId, actorId, request);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1209)
+                .message("Thay đổi thông tin nhóm thành công.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);

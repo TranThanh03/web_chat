@@ -1,4 +1,4 @@
-package com.example.chat.entity;
+package com.example.chat.dto.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,8 +8,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Member {
+public class UserConversationCreationRequest {
     String userId;
-    String roles;
-    String status;
+    String conversationId;
 }
