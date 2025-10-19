@@ -64,6 +64,8 @@ public enum ErrorCode {
 
     SINGLE_CONVERSATION(2001, "Đây là hội thoại 1-1!", HttpStatus.BAD_REQUEST),
 
+    GROUP_CONVERSATION(2001, "Đây là hội thoại nhóm!", HttpStatus.BAD_REQUEST),
+
     USER_ALREADY_IN_GROUP(1021, "Người dùng đã tham gia nhóm!", HttpStatus.BAD_REQUEST),
 
     USER_NOT_IN_GROUP(1021, "Người dùng không có trong nhóm!", HttpStatus.BAD_REQUEST),
@@ -74,6 +76,8 @@ public enum ErrorCode {
 
     CONVERSATION_EXITED(1020, "Hội thoại đã tồn tại!", HttpStatus.NOT_FOUND),
 
+    CONVERSATION_NOT_ACTIVE(1020, "Hội thoại không hoạt động!", HttpStatus.NOT_FOUND),
+
     CANNOT_JOIN_GROUP(1020, "Không thể tham gia nhóm!", HttpStatus.BAD_REQUEST),
 
     NOT_AN_ADMINISTRATOR(1020, "Người dùng không phải là quản trị viên trong nhóm!", HttpStatus.BAD_REQUEST),
@@ -81,6 +85,8 @@ public enum ErrorCode {
     USER_ALREADY_DELETED_CONVERSATION(1022, "Người dùng đã xóa cuộc trò chuyện này trước đó!", HttpStatus.BAD_REQUEST),
 
     USER_NOT_DELETED_CONVERSATION(1022, "Người dùng chưa xóa cuộc trò chuyện này!", HttpStatus.BAD_REQUEST),
+
+    NOT_SELF_ACTION(1022, "Không thể thực hiện hành động trên chính mình!", HttpStatus.BAD_REQUEST),
 
     //CANNOT_LOAD_MESSAGE(1020, "Không thể tải tin nhắn!", HttpStatus.BAD_REQUEST),
 

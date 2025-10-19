@@ -9,5 +9,8 @@ public enum GroupActionType {
     REMOVE_MEMBER,
     LEAVE_GROUP,
     PROMOTE_ADMIN,
+    REVOKE_ADMIN,
+    CHANGE_TO_PUBLIC,
+    CHANGE_TO_PRIVATE,
     DISBAND_GROUP
 }

@@ -158,7 +158,26 @@ public class ConversationController {
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1206)
-                .message("Thêm người dùng làm quản trị viên thành công.")
+                .message("Thăng cấp người dùng lên quản trị viên thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PostMapping("/group/{conversationId}/revoke-admin")
+    ResponseEntity<ApiResponse<String>> revokeAdmin(
+            Authentication authentication,
+            @PathVariable String conversationId,
+            @Valid @RequestBody UserIdRequest request) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        userService.verifyActiveAccount(request.getUserId());
+        groupConversationService.revokeAdmin(conversationId, actorId, request.getUserId());
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1207)
+                .message("Thu hồi quyền quản trị viên thành công.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -178,7 +197,7 @@ public class ConversationController {
                 .build());
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1207)
+                .code(1208)
                 .message("Xóa hội thoại thành công.")
                 .build();
 
@@ -195,7 +214,7 @@ public class ConversationController {
         conversationService.restoreConversation(conversationId, actorId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1208)
+                .code(1209)
                 .message("Khôi phục hội thoại thành công.")
                 .build();
 
@@ -203,18 +222,57 @@ public class ConversationController {
     }
 
     @PatchMapping("/group/{conversationId}/change-info")
-    ResponseEntity<ApiResponse<String>> changeInfoGroup(
+    ResponseEntity<ApiResponse<String>> changeGroupInfo(
             Authentication authentication,
             @PathVariable String conversationId,
             @RequestBody GroupInfoUpdateRequest request) {
 
         String actorId = customSecurity.getUserId(authentication);
         userService.verifyActiveAccount(actorId);
-        groupConversationService.changeInfoGroup(conversationId, actorId, request);
+        groupConversationService.changeGroupInfo(conversationId, actorId, request);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1209)
+                .code(1210)
                 .message("Thay đổi thông tin nhóm thành công.")
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/group/{conversationId}/visibility")
+    ResponseEntity<ApiResponse<String>> changeGroupVisibility(
+            Authentication authentication,
+            @PathVariable String conversationId,
+            @RequestParam boolean isPublic) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        groupConversationService.changeGroupVisibility(conversationId, actorId, isPublic);
+
+        String message = isPublic
+                ? "Đã chuyển nhóm sang chế độ công khai thành công."
+                : "Đã chuyển nhóm sang chế độ riêng tư thành công.";
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1211)
+                .message(message)
+                .build();
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PatchMapping("/group/{conversationId}/disband")
+    ResponseEntity<ApiResponse<String>> disbandGroup(
+            Authentication authentication,
+            @PathVariable String conversationId) {
+
+        String actorId = customSecurity.getUserId(authentication);
+        userService.verifyActiveAccount(actorId);
+        groupConversationService.disbandGroup(conversationId, actorId);
+
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(1212)
+                .message("Giải tán nhóm thành công.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);

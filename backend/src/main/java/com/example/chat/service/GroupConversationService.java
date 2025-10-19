@@ -239,6 +239,10 @@ public class GroupConversationService {
     }
 
     public void removeMember(String conversationId, String actorId, String userId) {
+        if (actorId.equals(userId)) {
+            throw new AppException(ErrorCode.NOT_SELF_ACTION);
+        }
+
         GroupConversation conversation = getActiveGroupById(conversationId);
 
         if (ConversationType.SINGLE.name().equals(conversation.getType())) {
@@ -259,6 +263,7 @@ public class GroupConversationService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
 
         member.setStatus(MemberStatus.REMOVED.name());
+        member.setRoles(MemberRole.MEMBER.name());
         conversationRepository.save(conversation);
 
         MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.REMOVE_MEMBER.name(), actorId, userId, null);
@@ -269,6 +274,10 @@ public class GroupConversationService {
     }
 
     public void promoteAdmin(String conversationId, String actorId, String userId) {
+        if (actorId.equals(userId)) {
+            throw new AppException(ErrorCode.NOT_SELF_ACTION);
+        }
+
         GroupConversation conversation = getActiveGroupById(conversationId);
 
         if (ConversationType.SINGLE.name().equals(conversation.getType())) {
@@ -289,10 +298,73 @@ public class GroupConversationService {
                 .findFirst()
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
 
-        member.setStatus(MemberRole.ADMIN.name());
+        member.setRoles(MemberRole.ADMIN.name());
         conversationRepository.save(conversation);
 
         MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.PROMOTE_ADMIN.name(), actorId, userId, null);
+        messagingTemplate.convertAndSend(
+                "/topic/conversation/" + conversationId,
+                systemMsg
+        );
+    }
+
+    public void revokeAdmin(String conversationId, String actorId, String userId) {
+        if (actorId.equals(userId)) {
+            throw new AppException(ErrorCode.NOT_SELF_ACTION);
+        }
+
+        GroupConversation conversation = getActiveGroupById(conversationId);
+
+        if (ConversationType.SINGLE.name().equals(conversation.getType())) {
+            throw new AppException(ErrorCode.SINGLE_CONVERSATION);
+        }
+
+        Member member = conversation.getParticipants().stream()
+                .filter(m -> m.getUserId().equals(userId)
+                        && m.getStatus().equals(MemberStatus.ACTIVE.name())
+                        && m.getRoles().equals(MemberRole.ADMIN.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
+
+        conversation.getParticipants().stream()
+                .filter(m -> m.getUserId().equals(actorId)
+                        && m.getStatus().equals(MemberStatus.ACTIVE.name())
+                        && m.getRoles().equals(MemberRole.ADMIN.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
+
+        member.setRoles(MemberRole.MEMBER.name());
+        conversationRepository.save(conversation);
+
+        MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.REVOKE_ADMIN.name(), actorId, userId, null);
+        messagingTemplate.convertAndSend(
+                "/topic/conversation/" + conversationId,
+                systemMsg
+        );
+    }
+
+    public void disbandGroup(String conversationId, String actorId) {
+        GroupConversation conversation = getActiveGroupById(conversationId);
+
+        if (ConversationType.SINGLE.name().equals(conversation.getType())) {
+            throw new AppException(ErrorCode.SINGLE_CONVERSATION);
+        }
+
+        conversation.getParticipants().stream()
+                .filter(m -> m.getUserId().equals(actorId)
+                        && m.getStatus().equals(MemberStatus.ACTIVE.name())
+                        && m.getRoles().equals(MemberRole.ADMIN.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
+
+        if (!conversation.getStatus().equals(ConversationStatus.ACTIVE.name())) {
+            throw new AppException(ErrorCode.CONVERSATION_NOT_ACTIVE);
+        }
+
+        conversation.setStatus(ConversationStatus.DISBANDED.name());
+        conversationRepository.save(conversation);
+
+        MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.DISBAND_GROUP.name(), actorId, null, null);
         messagingTemplate.convertAndSend(
                 "/topic/conversation/" + conversationId,
                 systemMsg
@@ -344,7 +416,21 @@ public class GroupConversationService {
 
     }
 
-    public void changeInfoGroup(String conversationId, String actorId, GroupInfoUpdateRequest request) {
+    public void validateActiveMemberInGroupActive(String id, String userId) {
+        GroupConversation conversation = getGroupById(id);
+
+        conversation.getParticipants().stream()
+                .filter(p -> p.getUserId().equals(userId)
+                        && p.getStatus().equals(MemberStatus.ACTIVE.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
+
+        if (!conversation.getStatus().equals(ConversationStatus.ACTIVE.name())) {
+            throw new AppException(ErrorCode.CONVERSATION_NOT_ACTIVE);
+        }
+    }
+
+    public void changeGroupInfo(String conversationId, String actorId, GroupInfoUpdateRequest request) {
         if (request.getGroupName().isBlank() && request.getGroupAvatar().isBlank()) {
             throw new AppException(ErrorCode.NOT_BLANK);
         }
@@ -378,6 +464,41 @@ public class GroupConversationService {
             conversationRepository.save(conversation);
 
             MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.CHANGE_AVATAR.name(), actorId, null, null);
+            messagingTemplate.convertAndSend(
+                    "/topic/conversation/" + conversationId,
+                    systemMsg
+            );
+        }
+    }
+
+    public void changeGroupVisibility(String conversationId, String actorId, boolean isPublic) {
+        GroupConversation conversation = getActiveGroupById(conversationId);
+
+        if (ConversationType.SINGLE.name().equals(conversation.getType())) {
+            throw new AppException(ErrorCode.SINGLE_CONVERSATION);
+        }
+
+        conversation.getParticipants().stream()
+                .filter(m -> m.getUserId().equals(actorId)
+                        && m.getStatus().equals(MemberStatus.ACTIVE.name())
+                        && m.getRoles().equals(MemberRole.ADMIN.name()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_IN_GROUP));
+
+        if (isPublic) {
+            conversation.setPublic(true);
+            conversationRepository.save(conversation);
+
+            MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.CHANGE_TO_PUBLIC.name(), actorId, null, null);
+            messagingTemplate.convertAndSend(
+                    "/topic/conversation/" + conversationId,
+                    systemMsg
+            );
+        } else {
+            conversation.setPublic(false);
+            conversationRepository.save(conversation);
+
+            MessageResponse systemMsg = chatService.systemMessage(conversationId, GroupActionType.CHANGE_TO_PRIVATE.name(), actorId, null, null);
             messagingTemplate.convertAndSend(
                     "/topic/conversation/" + conversationId,
                     systemMsg

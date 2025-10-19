@@ -3,6 +3,7 @@ package com.example.chat.controller;
 import com.example.chat.configuration.CustomSecurity;
 import com.example.chat.dto.response.ApiResponse;
 import com.example.chat.service.FriendService;
+import com.example.chat.service.SingleConversationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class FriendController {
     FriendService friendService;
     CustomSecurity customSecurity;
+    SingleConversationService singleConversationService;
 
     @PostMapping("/{friendId}/send")
     ResponseEntity<ApiResponse<String>> sendFriend(
@@ -25,7 +27,6 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.sendFriend(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
@@ -42,8 +43,9 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.acceptFriend(userId, friendId);
+
+        singleConversationService.handleUnBlockSingle(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1401)
@@ -59,7 +61,6 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.rejectFriend(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
@@ -76,7 +77,6 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.cancelFriend(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
@@ -93,8 +93,9 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.unFriend(userId, friendId);
+
+        singleConversationService.handleBlockSingle(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1404)
@@ -110,8 +111,9 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.blockFriend(userId, friendId);
+
+        singleConversationService.handleBlockSingle(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .code(1405)
@@ -127,7 +129,6 @@ public class FriendController {
             @PathVariable String friendId) {
 
         String userId = customSecurity.getUserId(authentication);
-
         friendService.unBlockFriend(userId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()

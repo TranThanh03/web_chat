@@ -46,6 +46,16 @@ public class ConversationService {
         }
     }
 
+    public void validateActiveUserInConversationActive(String id, String userId) {
+        Conversation conversation = getConversationById(id);
+
+        if (conversation.getType().equals(ConversationType.GROUP.name())) {
+            groupConversationService.validateActiveMemberInGroupActive(id, userId);
+        } else {
+            singleConversationService.validateUserInSingleActive(id, userId);
+        }
+    }
+
     public void deleteConversation(String conversationId, String userId) {
         validateUserInConversation(conversationId, userId);
 

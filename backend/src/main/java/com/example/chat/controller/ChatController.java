@@ -4,6 +4,7 @@ import com.example.chat.configuration.CustomSecurity;
 import com.example.chat.dto.request.MessageRequest;
 import com.example.chat.dto.response.MessageResponse;
 import com.example.chat.service.ChatService;
+import com.example.chat.service.ConversationService;
 import com.example.chat.service.UserService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class ChatController {
     ChatService chatService;
     CustomSecurity customSecurity;
     UserService userService;
+    ConversationService conversationService;
 
     @MessageMapping("/send-message/{conversationId}")
     @SendTo("/topic/conversation/{conversationId}")
@@ -34,6 +36,8 @@ public class ChatController {
 
         String senderId = customSecurity.getUserId(authentication);
         userService.verifyActiveAccount(senderId);
+
+        conversationService.validateActiveUserInConversationActive(conversationId, senderId);
 
         return chatService.sendMessage(conversationId, senderId, request);
     }
