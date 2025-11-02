@@ -1,8 +1,6 @@
 package com.example.chat.service;
 
-import com.example.chat.dto.request.account.AccountCreationRequest;
-import com.example.chat.dto.request.account.LocalAccountRequest;
-import com.example.chat.dto.request.account.OAuthAccountRequest;
+import com.example.chat.dto.request.account.*;
 import com.example.chat.dto.request.user.UserCreationRequest;
 import com.example.chat.dto.response.account.LocalAccountResponse;
 import com.example.chat.dto.response.account.OAuthAccountResponse;
@@ -49,10 +47,6 @@ public class AccountService {
     }
 
     public LocalAccountResponse createLocal(LocalAccountRequest request) {
-        if (hasEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-
         String accountStatus = AccountStatus.INACTIVATE.name();
         LocalDate dob = request.getDateOfBirth();
 
@@ -62,6 +56,10 @@ public class AccountService {
 
         if (dob.isBefore(LocalDate.now().minusYears(120))) {
             throw new AppException(ErrorCode.DATE_OF_BIRTH_TOO_OLD);
+        }
+
+        if (hasEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         Account account = this.create(
@@ -157,38 +155,43 @@ public class AccountService {
         userService.updateAccountStatus(id, status);
     }
 
-//    public void updateContact(String id, AccountContactUpdateRequest request) {
-//        Account account = getAccountById(id);
-//
-//        account.setPhone(request.getPhone());
-//        account.setEmail(request.getEmail());
-//
-//        accountRepository.save(account);
-//    }
-//
-//    public void changePassword(String id, PasswordChangeRequest request) {
-//        if (request.getNewPassword().equals(request.getCurrentPassword())) {
-//            throw new AppException(ErrorCode.PASSWORD_SAME_AS_OLD);
-//        }
-//
-//        Account account = getAccountById(id);
-//        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-//
-//        if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPassword())) {
-//            throw new AppException(ErrorCode.PASSWORD_INCORRECT);
-//        }
-//
-//        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
-//
-//        accountRepository.save(account);
-//    }
-//
-//    public void resetPassword(String id, PasswordRequest request) {
-//        Account account = getAccountById(id);
-//
-//        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-//        account.setPassword(passwordEncoder.encode(request.getPassword()));
-//
-//        accountRepository.save(account);
-//    }
+    public void updateContact(String id, ContactUpdateRequest request) {
+        Account account = getById(id);
+
+        if (request.getEmail().equals(account.getEmail())) {
+            throw new AppException(ErrorCode.NEW_EMAIL_SAME_AS_CURRENT);
+        }
+
+        account.setEmail(request.getEmail());
+
+        accountRepository.save(account);
+    }
+
+    public void changePassword(String id, PasswordChangeRequest request) {
+        if (request.getNewPassword().equals(request.getCurrentPassword())) {
+            throw new AppException(ErrorCode.NEW_PASSWORD_SAME_AS_CURRENT);
+        }
+
+        Account account = getById(id);
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_INCORRECT);
+        }
+
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        accountRepository.save(account);
+    }
+
+    public void resetPassword(String id, PasswordRequest request) {
+        Account account = getById(id);
+
+        if (passwordEncoder.matches(request.getPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.NEW_PASSWORD_SAME_AS_CURRENT);
+        }
+
+        account.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        accountRepository.save(account);
+    }
 }

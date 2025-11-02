@@ -40,7 +40,7 @@ public class ConversationController {
         friendService.validateAreFriends(ownerId, userId);
         singleConversationService.validateConversationNotExists(ownerId, userId);
 
-        String conversationId = singleConversationService.createSingle(ownerId, userId).getId();
+        String conversationId = singleConversationService.create(ownerId, userId).getId();
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .message("New conversation created successfully.")
@@ -62,8 +62,8 @@ public class ConversationController {
             throw new AppException(ErrorCode.CREATOR_CANNOT_BE_PARTICIPANT);
         }
 
-        String conversationId = groupConversationService.createGroup(ownerId, request).getId();
-        groupConversationService.groupCreationEvents(conversationId, ownerId, request.getParticipantsIds());
+        String conversationId = groupConversationService.create(ownerId, request).getId();
+        groupConversationService.creationEvents(conversationId, ownerId, request.getParticipantsIds());
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .message("New group conversation created successfully.")
@@ -225,7 +225,7 @@ public class ConversationController {
     ) {
         String actorId = customSecurity.getUserId(authentication);
         userService.verifyActiveAccount(actorId);
-        groupConversationService.changeGroupInfo(conversationId, actorId, request);
+        groupConversationService.changeInfo(conversationId, actorId, request);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .message("Group information updated successfully.")
@@ -244,7 +244,7 @@ public class ConversationController {
         userService.verifyActiveAccount(actorId);
 
         boolean isPublic = request.getIsPublic();
-        groupConversationService.changeGroupVisibility(conversationId, actorId, isPublic);
+        groupConversationService.changeVisibility(conversationId, actorId, isPublic);
 
         String message = isPublic
                 ? "Group set to public successfully."

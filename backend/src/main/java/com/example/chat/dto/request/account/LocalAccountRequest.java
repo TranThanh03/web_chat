@@ -1,5 +1,6 @@
 package com.example.chat.dto.request.account;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -23,7 +24,8 @@ public class LocalAccountRequest {
     String lastName;
 
     @NotNull(message = "FIELD_NOT_NULL")
-    @Past(message = "DATE_OF_BIRTH_INVALID")
+    @PastOrPresent(message = "DATE_OF_BIRTH_INVALID")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     LocalDate dateOfBirth;
 
     @NotBlank(message = "FIELD_NOT_BLANK")

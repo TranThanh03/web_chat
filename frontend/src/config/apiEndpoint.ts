@@ -7,7 +7,7 @@ export const API_ENDPOINT = {
         LOGOUT: `${API_VERSION}/auth/logout`,
     },
     ACCOUNT: {
-        REGISTER: `${API_VERSION}/account/register`,
+        REGISTER: `${API_VERSION}/accounts/register`,
     },
     USER: {
         PROFILE: `${API_VERSION}/users/profile`,

@@ -12,6 +12,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PasswordRequest {
     @NotBlank(message = "FIELD_NOT_BLANK")
-    @Size(min = 8, max = 40, message = "PASSWORD_INVALID")
+    @Size(min = 8, max = 32, message = "PASSWORD_LENGTH_INVALID")
     String password;
 }

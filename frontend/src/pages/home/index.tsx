@@ -1,11 +1,11 @@
 import { memo } from "react";
-import HeroSection from "@/components/HeroSection";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import HeroSection from "@/components/home/HeroSection";
+import Header from "@/components/home/Header";
+import Footer from "@/components/home/Footer";
 import { DialogProvider } from "@/providers/DialogProvider";
-import LoginDialog from "@/components/dialogs/LoginDialog";
-import SignupDialog from "@/components/dialogs/SignupDialog";
-import ResetPasswordDialog from "@/components/dialogs/ResetPasswordDialog";
+import LoginDialog from "@/components/dialog/LoginDialog";
+import SignupDialog from "@/components/dialog/SignupDialog";
+import ResetPasswordDialog from "@/components/dialog/ResetPasswordDialog";
 
 const HomePage = () => {
     return (

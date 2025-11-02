@@ -20,8 +20,7 @@ public class ChatSocketHandler {
     ChatService chatService;
     ConversationService conversationService;
     MessageService messageService;
-    NotificationService notificationService;
-    AsyncAttachmentProcessor asyncAttachmentProcessor;
+    AsyncService asyncService;
 
     @NonFinal
     SocketIONamespace chatNamespace;
@@ -55,7 +54,7 @@ public class ChatSocketHandler {
             if (StringUtils.hasText(data.getContent())) {
                 MessageResponse response = messageService.userMessage(conversationId, senderId, data);
                 chatNamespace.getRoomOperations(room).sendEvent(ChatEvent.CHAT_MESSAGE_NEW.getEvent(), response);
-                notificationService.sendMessageNotification(
+                asyncService.handleSendMessageNotification(
                         MessageNotificationRequest.builder()
                                 .conversationId(conversationId)
                                 .senderId(senderId)
@@ -66,7 +65,7 @@ public class ChatSocketHandler {
             }
 
             if (data.getPublicIds() != null && !data.getPublicIds().isEmpty()) {
-                asyncAttachmentProcessor.process(chatNamespace, client, room, conversationId, senderId, data.getPublicIds());
+                asyncService.handleProcessAttachment(client, conversationId, senderId, data.getPublicIds());
             }
         } catch (Exception e) {
             if (ackSender.isAckRequested()) {

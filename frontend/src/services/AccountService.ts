@@ -1,9 +1,9 @@
 import { API_ENDPOINT } from "@/config/apiEndpoint";
-import axiosInstance from "@/utils/axiosInstance";
+import { post } from "@/utils/request";
 
 const AccountService = {
     register: (data: any) => {
-        return axiosInstance.post(API_ENDPOINT.ACCOUNT.REGISTER, data);
+        return post<any>(API_ENDPOINT.ACCOUNT.REGISTER, data);
     },
 };
 

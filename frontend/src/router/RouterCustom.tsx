@@ -20,6 +20,10 @@ const router = createBrowserRouter([
                 element: <page.AuthenticatePage />
             },
             {
+                path: ROUTERS.CHAT_PAGE,
+                element: <page.ChatPage />
+            },
+            {
                 path: ROUTERS.ERROR404_PAGE,
                 element: <page.Page404 />
             },

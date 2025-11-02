@@ -22,13 +22,13 @@ public class ConversationService {
     GroupConversationService groupConversationService;
     SingleConversationService singleConversationService;
 
-    public Conversation getConversationById(String id) {
+    public Conversation getById(String id) {
         return conversationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
     }
 
     public List<String> getParticipantIdsInConversation(String id) {
-        Conversation conversation = getConversationById(id);
+        Conversation conversation = this.getById(id);
 
         if (conversation.getType().equals(ConversationType.GROUP.name())) {
             return groupConversationService.getActiveMemberIdInGroup(id);
@@ -38,7 +38,7 @@ public class ConversationService {
     }
 
     public void validateUserInConversation(String id, String userId) {
-        Conversation conversation = getConversationById(id);
+        Conversation conversation = this.getById(id);
 
         if (conversation.getType().equals(ConversationType.GROUP.name())) {
             groupConversationService.validateUserInGroup(id, userId);
@@ -48,7 +48,7 @@ public class ConversationService {
     }
 
     public void validateActiveUserInConversationActive(String id, String userId) {
-        Conversation conversation = getConversationById(id);
+        Conversation conversation = this.getById(id);
 
         if (conversation.getType().equals(ConversationType.GROUP.name())) {
             groupConversationService.validateActiveMemberInGroupActive(id, userId);
@@ -60,7 +60,7 @@ public class ConversationService {
     public void deleteConversation(String conversationId, String userId) {
         validateUserInConversation(conversationId, userId);
 
-        Conversation conversation = getConversationById(conversationId);
+        Conversation conversation = this.getById(conversationId);
 
         if (conversation.getDeletedByUserIds() == null) {
             conversation.setDeletedByUserIds(new ArrayList<>());
@@ -77,7 +77,7 @@ public class ConversationService {
     public void restoreConversation(String conversationId, String userId) {
         validateUserInConversation(conversationId, userId);
 
-        Conversation conversation = getConversationById(conversationId);
+        Conversation conversation = this.getById(conversationId);
 
         if (conversation.getDeletedByUserIds() == null || !conversation.getDeletedByUserIds().contains(userId)) {
             throw new AppException(ErrorCode.USER_NOT_DELETED_CONVERSATION);

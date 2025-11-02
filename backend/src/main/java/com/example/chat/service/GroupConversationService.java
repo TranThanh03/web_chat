@@ -44,7 +44,7 @@ public class GroupConversationService {
             maxAttempts = 5,
             backoff = @Backoff(delay = 100, multiplier = 2)
     )
-    public Conversation createGroup(String ownerId, GroupConversationRequest request) {
+    public Conversation create(String ownerId, GroupConversationRequest request) {
         String generateCode = CodeGenerator.generateShortCode();
 
         if (!userService.checkParticipantsValid(request.getParticipantsIds())) {
@@ -83,7 +83,7 @@ public class GroupConversationService {
         return conversationRepository.save(conversation);
     }
 
-    public void groupCreationEvents(String conversationId, String ownerId, List<String> memberIds) {
+    public void creationEvents(String conversationId, String ownerId, List<String> memberIds) {
         messageService.systemMessage(conversationId, GroupActionType.CREATE_GROUP.name(), ownerId, null, null);
 
         for (String userId : memberIds) {
@@ -96,7 +96,7 @@ public class GroupConversationService {
             throw new AppException(ErrorCode.PARTICIPANT_INVALID);
         }
 
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -165,7 +165,7 @@ public class GroupConversationService {
     }
 
     public void joinGroup(String conversationCode, String actorId) {
-        GroupConversation conversation = getActivePublicGroupByCode(conversationCode);
+        GroupConversation conversation = this.getActivePublicByCode(conversationCode);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -225,7 +225,7 @@ public class GroupConversationService {
     }
 
     public void leaveGroup(String conversationId, String actorId) {
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -315,7 +315,7 @@ public class GroupConversationService {
             throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -374,7 +374,7 @@ public class GroupConversationService {
             throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -426,7 +426,7 @@ public class GroupConversationService {
             throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -474,7 +474,7 @@ public class GroupConversationService {
     }
 
     public void disbandGroup(String conversationId, String actorId) {
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
         }
@@ -512,12 +512,12 @@ public class GroupConversationService {
         );
     }
 
-    public GroupConversation getGroupById(String id) {
+    public GroupConversation getById(String id) {
         return groupConversationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
     }
 
-    public GroupConversation getActiveGroupById(String id) {
+    public GroupConversation getActiveById(String id) {
         GroupConversation groupConversation = groupConversationRepository.findByIdAndStatus(id, ConversationStatus.ACTIVE.name());
 
         if (groupConversation == null) {
@@ -527,7 +527,7 @@ public class GroupConversationService {
         return groupConversation;
     }
 
-    public GroupConversation getActivePublicGroupByCode(String code) {
+    public GroupConversation getActivePublicByCode(String code) {
         GroupConversation groupConversation = groupConversationRepository.findByCodeAndStatusAndIsPublic(code, ConversationStatus.ACTIVE.name(), true);
 
         if (groupConversation == null) {
@@ -538,7 +538,7 @@ public class GroupConversationService {
     }
 
     public void validateUserInGroup(String id, String userId) {
-        GroupConversation conversation = getGroupById(id);
+        GroupConversation conversation = this.getById(id);
 
         conversation.getParticipants().stream()
                 .filter(p -> p.getUserId().equals(userId))
@@ -548,7 +548,7 @@ public class GroupConversationService {
     }
 
     public void validateActiveMemberInGroupActive(String id, String userId) {
-        GroupConversation conversation = getGroupById(id);
+        GroupConversation conversation = this.getById(id);
 
         if (!conversation.getStatus().equals(ConversationStatus.ACTIVE.name())) {
             throw new AppException(ErrorCode.CONVERSATION_NOT_ACTIVE);
@@ -564,7 +564,7 @@ public class GroupConversationService {
     }
 
     public List<String> getActiveMemberIdInGroup(String id) {
-        GroupConversation conversation = getGroupById(id);
+        GroupConversation conversation = this.getById(id);
 
         return conversation.getParticipants().stream()
                 .filter(p -> p.getStatus().equals(MemberStatus.ACTIVE.name()))
@@ -572,12 +572,12 @@ public class GroupConversationService {
                 .collect(Collectors.toList());
     }
 
-    public void changeGroupInfo(String conversationId, String actorId, GroupInfoUpdateRequest request) {
+    public void changeInfo(String conversationId, String actorId, GroupInfoUpdateRequest request) {
         if (request.getGroupName().isBlank() && request.getGroupAvatar().isBlank()) {
             throw new AppException(ErrorCode.FIELD_NOT_BLANK);
         }
 
-        GroupConversation conversation = getActiveGroupById(conversationId);
+        GroupConversation conversation = this.getActiveById(conversationId);
 
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);
@@ -607,8 +607,8 @@ public class GroupConversationService {
         }
     }
 
-    public void changeGroupVisibility(String conversationId, String actorId, boolean isPublic) {
-        GroupConversation conversation = getActiveGroupById(conversationId);
+    public void changeVisibility(String conversationId, String actorId, boolean isPublic) {
+        GroupConversation conversation = this.getActiveById(conversationId);
 
         if (!ConversationType.GROUP.name().equals(conversation.getType())) {
             throw new AppException(ErrorCode.GROUP_CONVERSATION_REQUIRED);

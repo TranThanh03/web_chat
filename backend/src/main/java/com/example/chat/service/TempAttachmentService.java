@@ -16,7 +16,7 @@ import java.time.Instant;
 public class TempAttachmentService {
     TempAttachmentRepository tempAttachmentRepository;
 
-    public void creatTempAttachment(TempAttachmentCreationRequest request) {
+    public void create(TempAttachmentCreationRequest request) {
         TempAttachment tempAttachment = new TempAttachment();
 
         tempAttachment.setPublicId(request.getPublicId());
@@ -32,7 +32,7 @@ public class TempAttachmentService {
         return tempAttachmentRepository.existsByPublicIdAndUserIdAndConversationId(publicId, userId, conversationId);
     }
 
-    public void deleteTempAttachmentByPublicId(String publicId) {
+    public void deleteByPublicId(String publicId) {
         tempAttachmentRepository.deleteByPublicId(publicId);
     }
 }

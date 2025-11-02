@@ -34,7 +34,7 @@ public class SingleConversationService {
             maxAttempts = 5,
             backoff = @Backoff(delay = 100, multiplier = 2)
     )
-    public Conversation createSingle(String ownerId, String userId) {
+    public Conversation create(String ownerId, String userId) {
         String generateCode = CodeGenerator.generateShortCode();
         SingleConversation conversation = new SingleConversation();
         List<String> newParticipantIds = new ArrayList<>(List.of(ownerId, userId));
@@ -49,7 +49,7 @@ public class SingleConversationService {
         return conversationRepository.save(conversation);
     }
 
-    public void handleSingleBlock(String actionId, String userId) {
+    public void handleBlock(String actionId, String userId) {
         List<String> newParticipantIds = new ArrayList<>(List.of(actionId, userId));
         SingleConversation conversation = singleConversationRepository.findByParticipantIdsAndType(newParticipantIds, ConversationType.SINGLE.name());
 
@@ -68,7 +68,7 @@ public class SingleConversationService {
         }
     }
 
-    public void handleSingleUnBlock(String actionId, String userId) {
+    public void handleUnBlock(String actionId, String userId) {
         List<String> newParticipantIds = new ArrayList<>(List.of(actionId, userId));
         SingleConversation conversation = singleConversationRepository.findByParticipantIdsAndType(newParticipantIds, ConversationType.SINGLE.name());
 
@@ -87,7 +87,7 @@ public class SingleConversationService {
         }
     }
 
-    public SingleConversation getSingleById(String id) {
+    public SingleConversation getById(String id) {
         return singleConversationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
     }
@@ -101,7 +101,7 @@ public class SingleConversationService {
     }
 
     public void validateUserInSingle(String id, String userId) {
-        SingleConversation conversation = getSingleById(id);
+        SingleConversation conversation = this.getById(id);
 
         if (!conversation.getParticipantIds().contains(userId)) {
             throw new AppException(ErrorCode.USER_NOT_IN_CONVERSATION);
@@ -109,7 +109,7 @@ public class SingleConversationService {
     }
 
     public void validateUserInSingleActive(String id, String userId) {
-        SingleConversation conversation = getSingleById(id);
+        SingleConversation conversation = this.getById(id);
 
         if (!conversation.getStatus().equals(ConversationStatus.ACTIVE.name())) {
             throw new AppException(ErrorCode.CONVERSATION_NOT_ACTIVE);
@@ -121,7 +121,7 @@ public class SingleConversationService {
     }
 
     public List<String> getUserIdInSingle(String id) {
-        SingleConversation conversation = getSingleById(id);
+        SingleConversation conversation = this.getById(id);
 
         return conversation.getParticipantIds();
     }
