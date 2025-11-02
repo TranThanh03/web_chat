@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
+
 @Document(collection = "messages")
 
 @Data
@@ -21,8 +23,10 @@ public class Message {
 
     @Indexed
     String conversationId;
+
     String senderId;
     String content;
+    List<Attachment> attachments;
     String type;
     String actionType;
     String actorId;
@@ -30,4 +34,5 @@ public class Message {
     String extraData;
     Long timeStamp;
     String status;
+    List<String> readByUserIds;
 }

@@ -6,10 +6,10 @@ import com.example.chat.exception.AppException;
 import com.example.chat.exception.ErrorCode;
 import com.example.chat.repository.FriendRepository;
 import com.example.chat.util.TimeUtils;
-import com.mongodb.client.result.DeleteResult;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -18,9 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -30,40 +30,47 @@ public class FriendService {
     UserService userService;
     MongoTemplate mongoTemplate;
 
-    public Friend sendFriend(String userId, String friendId) {
+    public void sendFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_SEND_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
+        userService.verifyActiveAccount(userId);
         userService.verifyActiveAccount(friendId);
 
-        if (friendRepository.existsByUserIdAndFriendId(userId, friendId) || friendRepository.existsByUserIdAndFriendIdAndStatusNot(friendId, userId, FriendStatus.REJECTED.name())) {
-            throw new AppException(ErrorCode.CANNOT_SEND_FRIEND);
+        String[] sortedIds = sortUserIds(userId, friendId);
+
+        if (friendRepository.existsByUserIdAndFriendIdAndActionId(sortedIds[0], sortedIds[1], userId)
+            || friendRepository.existsByUserIdAndFriendIdAndStatusNot(sortedIds[0], sortedIds[1], FriendStatus.REJECTED.name())
+        ) {
+            throw new AppException(ErrorCode.FRIEND_REQUEST_SEND_FAILED);
         }
 
         Friend friend = new Friend();
 
-        friend.setUserId(userId);
-        friend.setFriendId(friendId);
+        friend.setUserId(sortedIds[0]);
+        friend.setFriendId(sortedIds[1]);
         friend.setStatus(FriendStatus.PENDING.name());
-        friend.setActionUserId(userId);
+        friend.setActionId(userId);
         friend.setCreatedAt(TimeUtils.toUnixMillisUtcNow());
-        friend.setUpdatedAt(TimeUtils.toUnixMillisUtcNow());
 
-        return friendRepository.save(friend);
+        friendRepository.save(friend);
     }
 
+    @Transactional
     public void acceptFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_ACCEPT_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
+        userService.verifyActiveAccount(userId);
         userService.verifyActiveAccount(friendId);
 
-        Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(friendId, userId, FriendStatus.PENDING.name());
+        String[] sortedIds = sortUserIds(userId, friendId);
+        Friend friend = friendRepository.findByUserIdAndFriendIdAndActionIdNotAndStatus(sortedIds[0], sortedIds[1], userId, FriendStatus.PENDING.name());
 
         if (friend == null) {
-            throw new AppException(ErrorCode.CANNOT_ACCEPT_FRIEND);
+            throw new AppException(ErrorCode.FRIEND_REQUEST_ACCEPT_FAILED);
         }
 
         friend.setStatus(FriendStatus.ACCEPTED.name());
@@ -72,35 +79,25 @@ public class FriendService {
 
         friendRepository.save(friend);
 
-        Friend newFriend = new Friend();
-        newFriend.setUserId(userId);
-        newFriend.setFriendId(friendId);
-        newFriend.setStatus(FriendStatus.ACCEPTED.name());
-        newFriend.setActionUserId(friendId);
-        newFriend.setCreatedAt(TimeUtils.toUnixMillisUtcNow());
-        newFriend.setUpdatedAt(TimeUtils.toUnixMillisUtcNow());
-        newFriend.setExpireAt(null);
-
-        friendRepository.save(newFriend);
-
-        Friend oldFriend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(userId, friendId, FriendStatus.REJECTED.name());
-
-        if (oldFriend != null) {
-            friendRepository.delete(oldFriend);
+        Friend rejectedFriend = friendRepository.findByUserIdAndFriendIdAndStatus(sortedIds[0], sortedIds[1], FriendStatus.REJECTED.name());
+        if (rejectedFriend != null) {
+            friendRepository.delete(rejectedFriend);
         }
     }
 
     public void rejectFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_REJECT_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
+        userService.verifyActiveAccount(userId);
         userService.verifyActiveAccount(friendId);
 
-        Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(friendId, userId, FriendStatus.PENDING.name());
+        String[] sortedIds = sortUserIds(userId, friendId);
+        Friend friend = friendRepository.findByUserIdAndFriendIdAndActionIdNotAndStatus(sortedIds[0], sortedIds[1], userId, FriendStatus.PENDING.name());
 
         if (friend == null) {
-            throw new AppException(ErrorCode.CANNOT_REJECT_FRIEND);
+            throw new AppException(ErrorCode.FRIEND_REQUEST_REJECT_FAILED);
         }
 
         friend.setStatus(FriendStatus.REJECTED.name());
@@ -110,17 +107,20 @@ public class FriendService {
         friendRepository.save(friend);
     }
 
+    @Transactional
     public void cancelFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_CANCEL_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
-        userService.verifyActiveAccount(friendId);
+        userService.verifyActiveAccount(userId);
+        userService.checkExists(friendId);
 
-        Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(userId, friendId, FriendStatus.PENDING.name());
+        String[] sortedIds = sortUserIds(userId, friendId);
+        Friend friend = friendRepository.findByUserIdAndFriendIdAndActionIdAndStatus(sortedIds[0], sortedIds[1], userId, FriendStatus.PENDING.name());
 
         if (friend == null) {
-            throw new AppException(ErrorCode.CANNOT_CANCEL_FRIEND);
+            throw new AppException(ErrorCode.FRIEND_REQUEST_CANCEL_FAILED);
         }
 
         friendRepository.delete(friend);
@@ -129,32 +129,44 @@ public class FriendService {
     @Transactional
     public void unFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_UNFRIEND_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
-        userService.verifyActiveAccount(friendId);
+        userService.verifyActiveAccount(userId);
+        userService.checkExists(friendId);
 
-        DeleteResult result = deleteFriends(userId, friendId);
+        String[] sortedIds = sortUserIds(userId, friendId);
+        Friend friend = friendRepository.findByUserIdAndFriendIdAndStatus(sortedIds[0], sortedIds[1], FriendStatus.ACCEPTED.name());
 
-        if (result.getDeletedCount() == 0) {
-            throw new AppException(ErrorCode.CANNOT_UNFRIEND_FRIEND);
+        if (friend == null) {
+            throw new AppException(ErrorCode.UNFRIEND_FAILED);
         }
+
+        friendRepository.delete(friend);
     }
 
+    @Transactional
     public void blockFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_BLOCK_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
+        userService.verifyActiveAccount(userId);
         userService.verifyActiveAccount(friendId);
 
-        deleteFriends(userId, friendId);
+        String[] sortedIds = sortUserIds(userId, friendId);
+        Friend friend = friendRepository.findByUserIdAndFriendIdAndStatus(sortedIds[0], sortedIds[1], FriendStatus.ACCEPTED.name());
+
+        if (friend != null) {
+            friendRepository.delete(friend);
+        }
 
         Friend newFriend = new Friend();
-        newFriend.setUserId(userId);
-        newFriend.setFriendId(friendId);
+
+        newFriend.setUserId(sortedIds[0]);
+        newFriend.setFriendId(sortedIds[1]);
         newFriend.setStatus(FriendStatus.BLOCKED.name());
-        newFriend.setActionUserId(userId);
+        newFriend.setActionId(userId);
         newFriend.setCreatedAt(TimeUtils.toUnixMillisUtcNow());
         newFriend.setUpdatedAt(TimeUtils.toUnixMillisUtcNow());
         newFriend.setExpireAt(null);
@@ -162,55 +174,88 @@ public class FriendService {
         friendRepository.save(newFriend);
     }
 
+    @Transactional
     public void unBlockFriend(String userId, String friendId) {
         if (userId.equals(friendId)) {
-            throw new AppException(ErrorCode.CANNOT_UNBLOCK_FRIEND);
+            throw new AppException(ErrorCode.SELF_ACTION_NOT_ALLOWED);
         }
 
-        userService.verifyActiveAccount(friendId);
+        userService.verifyActiveAccount(userId);
+        userService.checkExists(friendId);
 
-        Friend friend = friendRepository.findFriendByUserIdAndFriendIdAndStatus(userId, friendId, FriendStatus.BLOCKED.name());
+        String[] sortedIds = sortUserIds(userId, friendId);
+        Friend friend = friendRepository.findByUserIdAndFriendIdAndActionIdAndStatus(sortedIds[0], sortedIds[1], userId, FriendStatus.BLOCKED.name());
 
         if (friend == null) {
-            throw new AppException(ErrorCode.CANNOT_UNBLOCK_FRIEND);
+            throw new AppException(ErrorCode.UNBLOCK_USER_FAILED);
         }
 
         friendRepository.delete(friend);
     }
 
     public void validateAreFriends(String userId, String anotherId) {
-        if (!friendRepository.existsByUserIdAndFriendIdAndStatus(userId, anotherId, FriendStatus.ACCEPTED.name())) {
+        String[] sortedIds = sortUserIds(userId, anotherId);
+
+        if (!friendRepository.existsByUserIdAndFriendIdAndStatus(sortedIds[0], sortedIds[1], FriendStatus.ACCEPTED.name())) {
             throw new AppException(ErrorCode.NOT_FRIENDS);
         }
     }
 
     public void validateFriendships(String ownerId, List<String> memberIds) {
-        List<Friend> friendships = friendRepository.findByUserIdAndFriendIdInAndStatus(ownerId, memberIds, FriendStatus.ACCEPTED.name());
+        if (memberIds.isEmpty()) {
+            return;
+        }
 
-        Set<String> validFriends = friendships.stream()
-                .map(Friend::getFriendId)
-                .collect(Collectors.toSet());
+        List<Map<String, String>> pairs = memberIds.stream()
+                .map(memberId -> {
+                    String[] sorted = sortUserIds(ownerId, memberId);
+                    Map<String, String> pair = new HashMap<>();
+                    pair.put("userId", sorted[0]);
+                    pair.put("friendId", sorted[1]);
+                    return pair;
+                })
+                .toList();
 
-        if (!validFriends.containsAll(memberIds)) {
+        Criteria[] orCriterias = pairs.stream()
+                .map(pair -> Criteria.where("userId").is(pair.get("userId"))
+                        .and("friendId").is(pair.get("friendId"))
+                        .and("status").is(FriendStatus.ACCEPTED.name()))
+                .toArray(Criteria[]::new);
+
+        Query query = new Query(new Criteria().orOperator(orCriterias));
+        List<Friend> friendships = mongoTemplate.find(query, Friend.class);
+
+        if (friendships.size() != memberIds.size()) {
             throw new AppException(ErrorCode.NOT_FRIENDS);
         }
     }
 
-//    public List<ListFriendsResponse> listFriends(String userId) {
-//
-//    }
+    public List<String> getFriends(String ownerId, int page, int size) {
+        int pageSize = Math.min(size, 20);
+        int skip = page * pageSize;
 
-    private DeleteResult deleteFriends(String userId, String friendId) {
-        Query query = new Query();
-        query.addCriteria(new Criteria().orOperator(
-                Criteria.where("userId").is(userId)
-                        .and("friendId").is(friendId)
-                        .and("status").is(FriendStatus.ACCEPTED.name()),
-                Criteria.where("userId").is(friendId)
-                        .and("friendId").is(userId)
-                        .and("status").is(FriendStatus.ACCEPTED.name())
-        ));
+        Query query = new Query(new Criteria()
+                .and("status").is(FriendStatus.ACCEPTED.name())
+                .orOperator(
+                        Criteria.where("userId").is(ownerId),
+                        Criteria.where("friendId").is(ownerId)
+                ))
+                .skip(skip)
+                .limit(pageSize)
+                .with(Sort.by(Sort.Direction.DESC, "updatedAt"));
 
-        return mongoTemplate.remove(query, Friend.class);
+        List<Friend> friendships = mongoTemplate.find(query, Friend.class);
+
+        return friendships.stream()
+                .map(f -> f.getUserId().equals(ownerId) ? f.getFriendId() : f.getUserId())
+                .toList();
+    }
+
+    private static String[] sortUserIds(String userId1, String userId2) {
+        if (userId1.compareTo(userId2) < 0) {
+            return new String[]{userId1, userId2};
+        } else {
+            return new String[]{userId2, userId1};
+        }
     }
 }

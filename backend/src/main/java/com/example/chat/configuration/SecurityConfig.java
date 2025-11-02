@@ -25,8 +25,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     @NonFinal
-    @Value("${base.url}")
-    protected String BASE_URL;
+    @Value("${base.fe-url}")
+    protected String BASE_FE_URL;
 
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
@@ -36,8 +36,8 @@ public class SecurityConfig {
     };
 
     public static final String[] POST_PUBLIC_ENDPOINTS = {
-        "/users",
-        "/auth/login", "/auth/outbound"
+        "/auth/login/local", "/auth/login/oauth",
+        "/accounts"
     };
 
     public static final String[] PATCH_PUBLIC_ENDPOINTS = {
@@ -60,7 +60,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, PATCH_PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.PUT, PUT_PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.DELETE, DELETE_PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtConfigurer -> jwtConfigurer
@@ -75,6 +74,7 @@ public class SecurityConfig {
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter.setAuthoritiesClaimName("roles");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
@@ -86,7 +86,7 @@ public class SecurityConfig {
     @Order(0)
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of(BASE_URL));
+        cors.setAllowedOrigins(List.of(BASE_FE_URL));
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("*"));
         cors.setAllowCredentials(true);

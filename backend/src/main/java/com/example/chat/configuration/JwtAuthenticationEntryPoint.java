@@ -1,6 +1,7 @@
 package com.example.chat.configuration;
 
 import com.example.chat.dto.response.ApiResponse;
+import com.example.chat.exception.AppException;
 import com.example.chat.exception.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,9 +15,20 @@ import java.io.IOException;
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(
-            HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
-            throws IOException {
-        ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
+            HttpServletRequest request,
+            HttpServletResponse response,
+            AuthenticationException authException
+    ) throws IOException {
+        Object attr = request.getAttribute("errorCode");
+        ErrorCode errorCode;
+
+        if (attr instanceof AppException appEx) {
+            errorCode = appEx.getErrorCode();
+        } else if (attr instanceof ErrorCode ec) {
+            errorCode = ec;
+        } else {
+            errorCode = ErrorCode.UNAUTHENTICATED;
+        }
 
         response.setStatus(errorCode.getStatusCode().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -26,9 +38,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 .message(errorCode.getMessage())
                 .build();
 
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        new ObjectMapper().writeValue(response.getWriter(), apiResponse);
         response.flushBuffer();
     }
 }

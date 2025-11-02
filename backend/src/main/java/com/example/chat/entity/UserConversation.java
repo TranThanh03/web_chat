@@ -20,4 +20,5 @@ public class UserConversation {
     String userId;
     String conversationId;
     Long deletedAt;
+    Long restrictedAt;
 }

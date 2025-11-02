@@ -1,0 +1,36 @@
+.error-404-container {
+    text-align: center;
+
+    .main {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .error-code {
+        font-size: 8rem;
+        font-weight: bold;
+        color: #ff6b6b;
+        margin-bottom: 65px;
+    }
+
+    .error-message {
+        font-size: 1.5rem;
+        margin: 1rem 0;
+    }
+
+    .back-home {
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 1rem;
+        color: #fff;
+        background-color: #499ef8;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .back-home:hover {
+        background-color: #007bff;
+    }
+}

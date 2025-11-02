@@ -1,18 +1,23 @@
 package com.example.chat.service;
 
-import com.example.chat.dto.request.AuthenticationRequest;
-import com.example.chat.dto.request.ExchangeTokenRequest;
-import com.example.chat.dto.request.UserCreationOutboundRequest;
-import com.example.chat.dto.response.AuthenticationResponse;
-import com.example.chat.entity.InvalidatedToken;
-import com.example.chat.entity.User;
+import com.example.chat.dto.request.account.OAuthAccountRequest;
+import com.example.chat.dto.request.auth.AuthenticationRequest;
+import com.example.chat.dto.request.auth.ExchangeTokenRequest;
+import com.example.chat.dto.request.auth.IntrospectRequest;
+import com.example.chat.dto.request.auth.OAuthAuthenticateRequest;
+import com.example.chat.dto.response.account.OAuthAccountResponse;
+import com.example.chat.dto.response.auth.ExchangeTokenResponse;
+import com.example.chat.dto.response.auth.IntrospectResponse;
+import com.example.chat.dto.response.auth.TokenAccountIdResponse;
+import com.example.chat.dto.response.user.OAuthUserResponse;
+import com.example.chat.entity.Account;
 import com.example.chat.enums.AccountStatus;
+import com.example.chat.enums.ProviderType;
 import com.example.chat.exception.AppException;
 import com.example.chat.exception.ErrorCode;
-import com.example.chat.repository.InvalidatedTokenRepository;
-import com.example.chat.repository.httpclient.OutboundIdentityClient;
-import com.example.chat.repository.httpclient.OutboundUserClient;
-import com.example.chat.util.DomainUtil;
+import com.example.chat.repository.httpclient.OAuthIdentityClient;
+import com.example.chat.repository.httpclient.OAuthUserClient;
+import com.example.chat.util.DomainUtils;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -23,15 +28,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -39,82 +43,152 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
+    AccountService accountService;
     UserService userService;
-    InvalidatedTokenRepository invalidatedTokenRepository;
-    OutboundIdentityClient outboundIdentityClient;
-    OutboundUserClient outboundUserClient;
+    OAuthIdentityClient OAuthIdentityClient;
+    OAuthUserClient OAuthUserClient;
+    PasswordEncoder passwordEncoder;
+    RedisService redisService;
 
     @NonFinal
-    @Value("${jwt.signerKey}")
-    protected String SIGNER_KEY;
+    @Value("${base.fe-url}")
+    String BASE_FE_URL;
 
     @NonFinal
-    @Value("${base.url}")
-    protected String BASE_URL;
+    @Value("${jwt.signer-key}")
+    String JWT_SIGNER_KEY;
 
     @NonFinal
-    @Value("${google.clientId}")
+    @Value("${jwt.access-token-expiration}")
+    long JWT_ACCESS_TOKEN_EXPIRATION;
+
+    @NonFinal
+    @Value("${google.client-id}")
     protected String CLIENT_ID;
 
     @NonFinal
-    @Value("${google.clientSecret}")
+    @Value("${google.client-secret}")
     protected String CLIENT_SECRET;
 
     @NonFinal
-    @Value("${google.redirectUrl}")
+    @Value("${google.redirect-url}")
     protected String REDIRECT_URI;
 
     @NonFinal
-    @Value("${google.grantType}")
+    @Value("${google.grant-type}")
     protected String GRANT_TYPE;
 
-    public String authenticate(AuthenticationRequest request) {
-        User user;
+    public TokenAccountIdResponse authenticate(AuthenticationRequest request) {
+        Account account = accountService.getByEmail(request.getUsername());
 
-        if (request.getUsername().matches("\\d+")) {
-            user = userService.getUserByPhone(request.getUsername());
-        } else {
-            user = userService.getUserByEmail(request.getUsername());
+        if (account == null || !account.getProvider().equals(ProviderType.LOCAL.name())) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        if (user == null) {
-            throw new AppException(ErrorCode.USER_NOT_EXITED);
+        if(!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+        if (account.getStatus().equals(AccountStatus.INACTIVATE.name())) {
+            throw new AppException(ErrorCode.ACCOUNT_INACTIVATE);
+        }
 
-        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-
-        if(!authenticated) {
-            throw new AppException(ErrorCode.LOGIN_FAILED);
-        } else if (user.getAccountStatus().equals(AccountStatus.BANNED.name())) {
+        if (account.getStatus().equals(AccountStatus.BANNED.name())) {
             throw new AppException(ErrorCode.ACCOUNT_BANNED);
         }
 
-        return generateToken(user);
+        String userId = userService.getIdByAccountId(account.getId());
+
+        return TokenAccountIdResponse.builder()
+                .token(generateToken(account, userId))
+                .accountId(account.getId())
+                .build();
     }
 
-    private String generateToken(User user) {
+    public TokenAccountIdResponse oauthAuthenticate(OAuthAuthenticateRequest request){
+        ExchangeTokenResponse response = OAuthIdentityClient.exchangeToken(ExchangeTokenRequest.builder()
+                .code(request.getCode())
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .redirectUri(REDIRECT_URI)
+                .grantType(GRANT_TYPE)
+                .build());
+
+        OAuthUserResponse userInfo = OAuthUserClient.getUserInfo("json", response.getAccessToken());
+        Account account = accountService.getByEmail(userInfo.getEmail());
+        String userId;
+
+        if (account == null) {
+            OAuthAccountResponse accountResponse = accountService.createOAuth(
+                    OAuthAccountRequest.builder()
+                            .firstName(userInfo.getGivenName())
+                            .lastName(userInfo.getFamilyName())
+                            .email(userInfo.getEmail())
+                            .avatar(userInfo.getPicture())
+                            .build()
+            );
+            account = accountResponse.getAccount();
+            userId = accountResponse.getUserId();
+        } else {
+            userId = userService.getIdByAccountId(account.getId());
+        }
+
+        return TokenAccountIdResponse.builder()
+                .token(generateToken(account, userId))
+                .accountId(account.getId())
+                .build();
+    }
+
+    public IntrospectResponse introspect(IntrospectRequest request) {
+        boolean isValid = true;
+
+        try {
+            var signToken = verifyToken(request.getToken());
+
+            if (Objects.isNull(signToken)) {
+                isValid = false;
+            }
+        } catch (JOSEException | ParseException e) {
+            isValid = false;
+        }
+
+        return IntrospectResponse.builder()
+                .valid(isValid)
+                .build();
+    }
+
+    public void invalidToken(String token) throws ParseException, JOSEException {
+        var signToken = verifyToken(token);
+        String jti = signToken.getJWTClaimsSet().getJWTID();
+        Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+        long ttl = (expiryTime.getTime() - System.currentTimeMillis()) / 1000;
+
+        if (ttl > 0) {
+            redisService.setInvalidToken(jti, ttl);
+        }
+    }
+
+    public String generateToken(Account account, String userId) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getFullName())
-                .issuer(DomainUtil.extractDomain(BASE_URL))
+                .subject(account.getId())
+                .issuer(DomainUtils.extractDomain(BASE_FE_URL))
+                .audience("chat-api")
                 .issueTime(new Date())
                 .expirationTime(Date.from(
-                        Instant.now().plusSeconds(3600)
+                        Instant.now().plusSeconds(JWT_ACCESS_TOKEN_EXPIRATION)
                 ))
                 .jwtID(UUID.randomUUID().toString())
-                .claim("userId", user.getId())
-                .claim("scope", buildScope(user))
+                .claim("uid", userId)
+                .claim("roles", buildScope(account))
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
-
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            jwsObject.sign(new MACSigner(JWT_SIGNER_KEY.getBytes()));
 
             return jwsObject.serialize();
         } catch (JOSEException e) {
@@ -122,92 +196,43 @@ public class AuthenticationService {
         }
     }
 
-    public AuthenticationResponse outboundAuthenticate(String code){
-        var response = outboundIdentityClient.exchangeToken(ExchangeTokenRequest.builder()
-                .code(code)
-                .clientId(CLIENT_ID)
-                .clientSecret(CLIENT_SECRET)
-                .redirectUri(REDIRECT_URI)
-                .grantType(GRANT_TYPE)
-                .build());
-
-        var userInfo = outboundUserClient.getUserInfo("json", response.getAccessToken());
-        User user = userService.getUserByEmail(userInfo.getEmail());
-
-        if (user == null) {
-            user = userService.createUserOutbound(UserCreationOutboundRequest.builder()
-                            .fullName(userInfo.getName())
-                            .email(userInfo.getEmail())
-                            .avatar(userInfo.getPicture())
-                    .build());
-        } else {
-            if (user.getAccountStatus().equals(AccountStatus.INACTIVATE.name())) {
-                user.setAccountStatus(AccountStatus.ACTIVATE.name());
-                userService.saveUser(user);
-            }
-        }
-
-        boolean noPassword = StringUtils.hasText(user.getPassword()) ? false : true;
-
-        return AuthenticationResponse.builder()
-                .token(generateToken(user))
-                .noPassword(noPassword)
-                .build();
-    }
-
-    public Boolean introspect(String token) {
-        try {
-            verifyToken(token);
-            return true;
-        } catch (JOSEException | ParseException e) {
-            return false;
-        }
-    }
-
-    public void logout(String token)
-            throws ParseException, JOSEException {
-        var signToken = verifyToken(token);
-
-        String jit = signToken.getJWTClaimsSet().getJWTID();
-        Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
-
-        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                .id(jit)
-                .expiryTime(expiryTime.toInstant())
-                .build();
-
-        invalidatedTokenRepository.save(invalidatedToken);
-    }
-
-    private SignedJWT verifyToken(String token)
-            throws JOSEException, ParseException {
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-
+    public SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+        JWSVerifier verifier = new MACVerifier(JWT_SIGNER_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
-
-        String userId = signedJWT.getJWTClaimsSet().getClaim("userId").toString();
         Date expityTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
         var verified= signedJWT.verify(verifier);
 
         if (!(verified && expityTime.after(new Date()))) {
             return null;
         }
 
-        if(invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+        String jti = signedJWT.getJWTClaimsSet().getJWTID();
+        String accountId = signedJWT.getJWTClaimsSet().getSubject();
+
+        if (redisService.isInvalidToken(jti)) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
-        } else if (userService.isCustomerBanned(userId)) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        if (accountService.hasStatus(accountId, AccountStatus.INACTIVATE)) {
+            throw new AppException(ErrorCode.ACCOUNT_INACTIVATE);
+        }
+
+        if (accountService.hasStatus(accountId, AccountStatus.BANNED)) {
+            throw new AppException(ErrorCode.ACCOUNT_BANNED);
         }
 
         return signedJWT;
     }
 
-    private String buildScope(User user) {
+    public String generateSocketToken(String userId) {
+        return redisService.createSocketToken(userId);
+    }
+
+    private String buildScope(Account account) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 
-        if (!CollectionUtils.isEmpty(user.getRoles())) {
-            user.getRoles().forEach(stringJoiner::add);
+        if (!CollectionUtils.isEmpty(account.getRoles())) {
+            account.getRoles().forEach(stringJoiner::add);
         }
 
         return stringJoiner.toString();

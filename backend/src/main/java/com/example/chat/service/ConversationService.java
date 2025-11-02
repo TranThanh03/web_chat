@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,16 +24,16 @@ public class ConversationService {
 
     public Conversation getConversationById(String id) {
         return conversationRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_EXITED));
+                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
     }
 
-    public void validateActiveMemberInConversation(String id, String userId) {
+    public List<String> getParticipantIdsInConversation(String id) {
         Conversation conversation = getConversationById(id);
 
         if (conversation.getType().equals(ConversationType.GROUP.name())) {
-            groupConversationService.validateActiveMemberInGroup(id, userId);
+            return groupConversationService.getActiveMemberIdInGroup(id);
         } else {
-            singleConversationService.validateUserInSingle(id, userId);
+            return singleConversationService.getUserIdInSingle(id);
         }
     }
 
@@ -85,5 +86,4 @@ public class ConversationService {
         conversation.getDeletedByUserIds().remove(userId);
         conversationRepository.save(conversation);
     }
-
 }

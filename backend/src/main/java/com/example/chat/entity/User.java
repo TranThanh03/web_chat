@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
+import java.time.LocalDate;
 
 @Document(collection = "users")
 
@@ -20,20 +20,15 @@ public class User {
     String id;
 
     @Indexed(unique = true)
+    String accountId;
+
+    @Indexed(unique = true)
     String code;
 
+    String firstName;
+    String lastName;
     String fullName;
     String avatar;
-
-    @Indexed(unique = true)
-    String phone;
-
-    @Indexed(unique = true)
-    String email;
-
-    String password;
-    List<String> roles;
-    Long registeredTime;
+    LocalDate dateOfBirth;
     String accountStatus;
-    String presenceStatus;
 }

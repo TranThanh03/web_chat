@@ -1,0 +1,15 @@
+package com.example.chat.dto.request.conversation;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class VisibilityRequest {
+    @NotNull(message = "FIELD_NOT_NULL")
+    Boolean isPublic;
+}

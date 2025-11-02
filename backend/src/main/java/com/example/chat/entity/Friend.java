@@ -22,7 +22,7 @@ public class Friend {
     String userId;
     String friendId;
     String status;
-    String actionUserId;
+    String actionId;
     Long createdAt;
     Long updatedAt;
 

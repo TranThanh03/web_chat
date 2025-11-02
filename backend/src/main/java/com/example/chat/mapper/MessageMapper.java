@@ -1,6 +1,6 @@
 package com.example.chat.mapper;
 
-import com.example.chat.dto.response.MessageResponse;
+import com.example.chat.dto.response.message.MessageResponse;
 import com.example.chat.entity.Message;
 import org.mapstruct.Mapper;
 

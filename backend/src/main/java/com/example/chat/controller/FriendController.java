@@ -1,9 +1,13 @@
 package com.example.chat.controller;
 
 import com.example.chat.configuration.CustomSecurity;
+import com.example.chat.dto.request.notification.FriendNotificationRequest;
 import com.example.chat.dto.response.ApiResponse;
+import com.example.chat.enums.NotificationType;
 import com.example.chat.service.FriendService;
+import com.example.chat.service.NotificationService;
 import com.example.chat.service.SingleConversationService;
+import com.example.chat.util.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,18 +24,26 @@ public class FriendController {
     FriendService friendService;
     CustomSecurity customSecurity;
     SingleConversationService singleConversationService;
+    NotificationService notificationService;
 
     @PostMapping("/{friendId}/send")
     ResponseEntity<ApiResponse<String>> sendFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.sendFriend(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.sendFriend(actorId, friendId);
+        notificationService.sendFriendNotification(
+                FriendNotificationRequest.builder()
+                        .actorId(actorId)
+                        .userId(friendId)
+                        .type(NotificationType.FRIEND_REQUEST.name())
+                        .createAt(TimeUtils.toUnixMillisUtcNow())
+                        .build()
+        );
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1400)
-                .message("Gửi lời kết bạn thành công.")
+                .message("Friend request sent successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -40,16 +52,22 @@ public class FriendController {
     @PatchMapping("/{friendId}/accept")
     ResponseEntity<ApiResponse<String>> acceptFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.acceptFriend(userId, friendId);
-
-        singleConversationService.handleUnBlockSingle(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.acceptFriend(actorId, friendId);
+        singleConversationService.handleSingleUnBlock(actorId, friendId);
+        notificationService.sendFriendNotification(
+                FriendNotificationRequest.builder()
+                        .actorId(actorId)
+                        .userId(friendId)
+                        .type(NotificationType.FRIEND_ACCEPT.name())
+                        .createAt(TimeUtils.toUnixMillisUtcNow())
+                        .build()
+        );
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1401)
-                .message("Chấp nhận kết bạn thành công.")
+                .message("Friend request accepted successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -58,14 +76,13 @@ public class FriendController {
     @PatchMapping("/{friendId}/reject")
     ResponseEntity<ApiResponse<String>> rejectFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.rejectFriend(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.rejectFriend(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1402)
-                .message("Từ chối kết bạn thành công.")
+                .message("Friend request rejected successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -74,14 +91,13 @@ public class FriendController {
     @DeleteMapping("/{friendId}/cancel")
     ResponseEntity<ApiResponse<String>> cancelFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.cancelFriend(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.cancelFriend(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1403)
-                .message("Hủy lời kết bạn thành công.")
+                .message("Friend request cancelled successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -90,16 +106,14 @@ public class FriendController {
     @DeleteMapping("/{friendId}/unfriend")
     ResponseEntity<ApiResponse<String>> unFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.unFriend(userId, friendId);
-
-        singleConversationService.handleBlockSingle(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.unFriend(actorId, friendId);
+        singleConversationService.handleSingleBlock(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1404)
-                .message("Hủy bạn bè thành công.")
+                .message("Unfriended successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -108,16 +122,14 @@ public class FriendController {
     @PostMapping("/{friendId}/block")
     ResponseEntity<ApiResponse<String>> blockFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.blockFriend(userId, friendId);
-
-        singleConversationService.handleBlockSingle(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.blockFriend(actorId, friendId);
+        singleConversationService.handleSingleBlock(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1405)
-                .message("Chặn thành công.")
+                .message("User blocked successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);
@@ -126,14 +138,13 @@ public class FriendController {
     @DeleteMapping("/{friendId}/unblock")
     ResponseEntity<ApiResponse<String>> unBlockFriend(
             Authentication authentication,
-            @PathVariable String friendId) {
-
-        String userId = customSecurity.getUserId(authentication);
-        friendService.unBlockFriend(userId, friendId);
+            @PathVariable String friendId
+    ) {
+        String actorId = customSecurity.getUserId(authentication);
+        friendService.unBlockFriend(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-                .code(1406)
-                .message("Bỏ chặn thành công.")
+                .message("User unblocked successfully.")
                 .build();
 
         return ResponseEntity.ok(apiResponse);

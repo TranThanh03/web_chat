@@ -7,11 +7,15 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface FriendRepository extends MongoRepository<Friend, String> {
-    boolean existsByUserIdAndFriendId(String userId, String friendId);
+    boolean existsByUserIdAndFriendIdAndActionId(String userId, String friendId, String actionId);
 
-    boolean existsByUserIdAndFriendIdAndStatusNot(String friendId, String userId, String status);
+    boolean existsByUserIdAndFriendIdAndStatusNot(String userId, String friendId, String status);
 
-    Friend findFriendByUserIdAndFriendIdAndStatus(String friendId, String userId, String status);
+    Friend findByUserIdAndFriendIdAndActionIdNotAndStatus(String userId, String friendId, String actionId, String status);
+
+    Friend findByUserIdAndFriendIdAndStatus(String userId, String friendId, String status);
+
+    Friend findByUserIdAndFriendIdAndActionIdAndStatus(String userId, String friendId, String actionId, String status);
 
     boolean existsByUserIdAndFriendIdAndStatus(String userId, String friendId, String status);
 

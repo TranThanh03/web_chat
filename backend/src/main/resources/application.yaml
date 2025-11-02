@@ -12,23 +12,46 @@ server:
 spring:
   data:
     mongodb:
-      uri: mongodb://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin
+      uri: mongodb://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:27017/${DB_NAME}?authSource=admin
       auto-index-creation: true
 
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
+      password: ${REDIS_PASSWORD}
+      timeout: 5000ms
+      connect-timeout: 2000ms
+
 jwt:
-  signerKey: ${JWT_SIGNER_KEY}
+  signer-key: ${JWT_SIGNER_KEY}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
 
 google:
-  apiBaseUrl: ${GG_API_BASE_URL}
-  clientId: ${GG_CLIENT_ID}
-  clientSecret: ${GG_CLIENT_SECRET}
-  redirectUrl: ${GG_REDIRECT_URI}
-  grantType: ${GG_GRANT_TYPE}
-  oauth2BaseUrl: ${GG_OAUTH2_BASE_URL}
+  api-base-url: ${GG_API_BASE_URL}
+  client-id: ${GG_CLIENT_ID}
+  client-secret: ${GG_CLIENT_SECRET}
+  redirect-url: ${GG_REDIRECT_URI}
+  grant-type: ${GG_GRANT_TYPE}
+  oauth2-base-url: ${GG_OAUTH2_BASE_URL}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+  folder: ${CLOUDINARY_FOLDER}
+
+redis-ttl:
+  socket-token-ttl: ${SOCKET_TOKEN_TTL}
+
+recaptcha:
+  verify-url: ${RECAPTCHA_VERIFY_URL}
+  cb-secret: ${RECAPTCHA_CB_SECRET}
+  inv-secret: ${RECAPTCHA_INV_SECRET}
 
 base:
-  url: ${BASE_URL}
-  defaultAvatarUrl: ${DEFAULT_AVATAR_URL}
+  fe-url: ${BASE_FE_URL}
+  default-avatar-url: ${DEFAULT_AVATAR_URL}
 
 app:
   name: chat
