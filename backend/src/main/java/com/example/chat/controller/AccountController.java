@@ -44,7 +44,7 @@ public class AccountController {
     }
 
     @PatchMapping("/active")
-    ResponseEntity<ApiResponse<String>> activeAccount(
+    ResponseEntity<ApiResponse<String>> active(
             Authentication authentication
     ) {
         String id = customSecurity.getAccountId(authentication);
@@ -57,55 +57,4 @@ public class AccountController {
 
         return ResponseEntity.ok(apiResponse);
     }
-//
-//    @PatchMapping("/update-info")
-//    ResponseEntity<ApiResponse<String>> updateUserInfo(
-//            Authentication authentication,
-//            @Valid @RequestBody UserInfoUpdateRequest request) {
-//
-//        String id = customSecurity.getUserId(authentication);
-//
-//        userService.updateUserInfo(id, request);
-//
-//        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-//                .code(1102)
-//                .message("Cập nhật thông tin người dùng thành công.")
-//                .build();
-//
-//        return ResponseEntity.ok(apiResponse);
-//    }
-//
-//    @PatchMapping("/update-contact")
-//    ResponseEntity<ApiResponse<String>> updateUserContact(
-//            Authentication authentication,
-//            @Valid @RequestBody UserContactUpdateRequest request) {
-//
-//        String id = customSecurity.getUserId(authentication);
-//
-//        userService.updateUserContact(id, request);
-//
-//        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-//                .code(1103)
-//                .message("Cập nhật thông tin liên hệ thành công.")
-//                .build();
-//
-//        return ResponseEntity.ok(apiResponse);
-//    }
-//
-//    @PatchMapping("/change-password")
-//    ResponseEntity<ApiResponse<String>> changePassword(
-//            Authentication authentication,
-//            @Valid @RequestBody PasswordChangeRequest request) {
-//
-//        String id = customSecurity.getUserId(authentication);
-//
-//        userService.changePassword(id, request);
-//
-//        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
-//                .code(1104)
-//                .message("Cập nhật mật khẩu mới thành công.")
-//                .build();
-//
-//        return ResponseEntity.ok(apiResponse);
-//    }
 }

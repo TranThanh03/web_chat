@@ -1,7 +1,8 @@
 package com.example.chat.controller;
 
 import com.corundumstudio.socketio.*;
-import com.example.chat.service.RedisService;
+import com.example.chat.service.ChatService;
+import com.example.chat.service.PresenceService;
 import jakarta.annotation.PostConstruct;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -12,10 +13,11 @@ import org.springframework.stereotype.Component;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class  AppSocketHandler {
     SocketIONamespace appNamespace;
-    RedisService redisService;
     ChatSocketHandler chatSocketHandler;
-    NotificationSocketHandler notificationSocketHandler;
+    DirectNotificationSocketHandler directNotificationSocketHandler;
     PresenceSocketHandler presenceSocketHandler;
+    ChatService chatService;
+    PresenceService presenceService;
 
     @PostConstruct
     public void init() {
@@ -23,7 +25,7 @@ public class  AppSocketHandler {
         appNamespace.addDisconnectListener(this::handleDisconnect);
 
         chatSocketHandler.registerEvents(appNamespace);
-        notificationSocketHandler.registerEvents(appNamespace);
+        directNotificationSocketHandler.registerEvents(appNamespace);
         presenceSocketHandler.registerEvents(appNamespace);
     }
 
@@ -33,8 +35,7 @@ public class  AppSocketHandler {
             String socketId = client.getSessionId().toString();
             client.set("userId", userId);
 
-            redisService.addSocketForUser(userId, socketId);
-            redisService.markUserOnline(userId);
+            presenceService.register(userId, socketId);
 
             client.joinRoom("notification:" + userId);
         } catch (Exception e) {
@@ -43,17 +44,10 @@ public class  AppSocketHandler {
     }
 
     private void handleDisconnect(SocketIOClient client) {
+        String userId = client.get("userId");
         String socketId = client.getSessionId().toString();
-        String userId = redisService.getUserBySocket(socketId);
 
-        chatSocketHandler.handleExitChat(client, null, null);
-
-        if (userId != null) {
-            redisService.removeSocketForUser(userId, socketId);
-            if (!redisService.hasActiveSockets(userId)) {
-                redisService.markUserOffline(userId);
-            }
-            redisService.deleteSocketMapping(socketId);
-        }
+        presenceService.remove(userId, socketId);
+        chatService.exitChat(client, null);
     }
 }

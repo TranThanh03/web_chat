@@ -31,9 +31,9 @@ const AuthenticatePage = () => {
         if (stepIndexRef.current >= STEPS.length) {
             setTimeout(() => {
                 if (statusRef.current === "success") {
-                    navigate("/chat");
+                    navigate("/messages", { replace: true });
                 } else {
-                    // navigate("/");
+                    navigate("/");
                 }
             }, 700);
 

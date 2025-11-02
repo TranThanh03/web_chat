@@ -4,8 +4,8 @@ import com.example.chat.configuration.CustomSecurity;
 import com.example.chat.dto.request.notification.FriendNotificationRequest;
 import com.example.chat.dto.response.ApiResponse;
 import com.example.chat.enums.NotificationType;
+import com.example.chat.service.AsyncService;
 import com.example.chat.service.FriendService;
-import com.example.chat.service.NotificationService;
 import com.example.chat.service.SingleConversationService;
 import com.example.chat.util.TimeUtils;
 import lombok.AccessLevel;
@@ -24,7 +24,7 @@ public class FriendController {
     FriendService friendService;
     CustomSecurity customSecurity;
     SingleConversationService singleConversationService;
-    NotificationService notificationService;
+    AsyncService asyncService;
 
     @PostMapping("/{friendId}/send")
     ResponseEntity<ApiResponse<String>> sendFriend(
@@ -33,7 +33,7 @@ public class FriendController {
     ) {
         String actorId = customSecurity.getUserId(authentication);
         friendService.sendFriend(actorId, friendId);
-        notificationService.sendFriendNotification(
+        asyncService.handleSendFriendNotification(
                 FriendNotificationRequest.builder()
                         .actorId(actorId)
                         .userId(friendId)
@@ -56,8 +56,8 @@ public class FriendController {
     ) {
         String actorId = customSecurity.getUserId(authentication);
         friendService.acceptFriend(actorId, friendId);
-        singleConversationService.handleSingleUnBlock(actorId, friendId);
-        notificationService.sendFriendNotification(
+        singleConversationService.handleUnBlock(actorId, friendId);
+        asyncService.handleSendFriendNotification(
                 FriendNotificationRequest.builder()
                         .actorId(actorId)
                         .userId(friendId)
@@ -110,7 +110,7 @@ public class FriendController {
     ) {
         String actorId = customSecurity.getUserId(authentication);
         friendService.unFriend(actorId, friendId);
-        singleConversationService.handleSingleBlock(actorId, friendId);
+        singleConversationService.handleBlock(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .message("Unfriended successfully.")
@@ -126,7 +126,7 @@ public class FriendController {
     ) {
         String actorId = customSecurity.getUserId(authentication);
         friendService.blockFriend(actorId, friendId);
-        singleConversationService.handleSingleBlock(actorId, friendId);
+        singleConversationService.handleBlock(actorId, friendId);
 
         ApiResponse<String> apiResponse = ApiResponse.<String>builder()
                 .message("User blocked successfully.")

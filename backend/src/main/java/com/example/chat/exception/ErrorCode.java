@@ -42,7 +42,8 @@ public enum ErrorCode {
     EMAIL_INVALID(1203, "Invalid email format.", HttpStatus.BAD_REQUEST),
     PASSWORD_LENGTH_INVALID(1204, "Password must be between 8 and 32 characters.", HttpStatus.BAD_REQUEST),
     PASSWORD_INCORRECT(1205, "Incorrect password.", HttpStatus.BAD_REQUEST),
-    PASSWORD_SAME_AS_OLD(1206, "New password must be different from old password.", HttpStatus.BAD_REQUEST),
+    NEW_PASSWORD_SAME_AS_CURRENT(1206, "New password must be different from current password.", HttpStatus.BAD_REQUEST),
+    NEW_EMAIL_SAME_AS_CURRENT(1206, "New email must be different from current email.", HttpStatus.BAD_REQUEST),
 
     // ================= USER (1300 - 1399) =================
     USER_NOT_FOUND(1300, "User not found.", HttpStatus.NOT_FOUND),

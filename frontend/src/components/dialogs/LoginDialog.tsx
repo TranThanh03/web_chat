@@ -13,6 +13,7 @@ import { ERROR_MESSAGE } from "@/utils/errorMessage";
 import RecaptchaCb from "../recaptcha/RecaptchaCb";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useSocialLogin } from "@/hooks/useSocialLogin";
+import { useNavigate } from "react-router-dom";
 
 const LoginDialog = () => {
     const { login } = useAuth();
@@ -28,6 +29,7 @@ const LoginDialog = () => {
     const [msgError, setMsgError] = useState<string | null>(null);
     const [disabled, setDisabled] = useState(true);
     const recaptchaRef = useRef<ReCAPTCHA>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (formData.username && formData.password && captchaToken) {
@@ -41,7 +43,7 @@ const LoginDialog = () => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name] : value
+            [name] : value.trim()
         }));
         setMsgError("");
     };
@@ -64,6 +66,7 @@ const LoginDialog = () => {
             if (response?.code === 0) {
                 login(response?.result?.token);
                 setFormData(initFormData);
+                navigate("/messages", { replace: true });
             } else {
                 setMsgError(response?.message || ERROR_MESSAGE.LOGIN_FAILED);
             }
