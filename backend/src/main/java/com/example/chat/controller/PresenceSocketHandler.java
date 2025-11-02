@@ -1,23 +1,32 @@
 package com.example.chat.controller;
 
 import com.corundumstudio.socketio.*;
+import com.example.chat.enums.PresenceEvent;
+import com.example.chat.service.PresenceService;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+import lombok.experimental.NonFinal;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PresenceSocketHandler {
+    PresenceService presenceService;
+
+    @NonFinal
+    SocketIONamespace presenceNamespace;
+
+    private static final String PRESENCE_ROOM_PREFIX = "presence:";
+
     public void registerEvents(SocketIONamespace namespace) {
-        namespace.addEventListener("presence:update", String.class, this::handlePresenceUpdate);
+        this.presenceNamespace = namespace;
+        presenceService.init(namespace, PRESENCE_ROOM_PREFIX);
+        namespace.addEventListener(PresenceEvent.PRESENCE_HEARTBEAT.getEvent(), String.class, this::handleHeartbeat);
     }
 
-    private void handlePresenceUpdate(SocketIOClient client, String status, AckRequest ackSender) {
-        String userId = client.get("userId");
-        log.info("Presence update from {}: {}", userId, status);
-        client.getNamespace().getBroadcastOperations().sendEvent("presence:update", userId, status);
+    public void handleHeartbeat(SocketIOClient client, String data, AckRequest ackSender) {
+        String socketId = client.getSessionId().toString();
+        presenceService.heartbeat(socketId);
     }
 }

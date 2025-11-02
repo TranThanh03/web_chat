@@ -3,14 +3,20 @@ package com.example.chat.service;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIONamespace;
+import com.example.chat.dto.request.message.MessageData;
 import com.example.chat.dto.request.message.SendEventToConversationRequest;
+import com.example.chat.dto.request.notification.MessageNotificationRequest;
 import com.example.chat.dto.response.message.MessageResponse;
 import com.example.chat.enums.ChatEvent;
+import com.example.chat.exception.AppException;
+import com.example.chat.exception.ErrorCode;
+import com.example.chat.util.TimeUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,9 +92,18 @@ public class ChatService {
         }
     }
 
+    public void handleSendAttachment(String conversationId, MessageResponse response) {
+        String room = CHAT_ROOM_PREFIX + conversationId;
+        chatNamespace.getRoomOperations(room).sendEvent(ChatEvent.CHAT_MESSAGE_NEW.getEvent(), response);
+    }
+
     public void sendSystemMessage(String conversationId, MessageResponse systemMsg) {
         String room = CHAT_ROOM_PREFIX + conversationId;
         chatNamespace.getRoomOperations(room).sendEvent(ChatEvent.CHAT_MESSAGE_NEW.getEvent(), systemMsg);
+    }
+
+    public void handleSendAppException(SocketIOClient client, AppException ae) {
+        client.sendEvent(ChatEvent.CHAT_MESSAGE_FAILED.getEvent(), ae);
     }
 
     public void sendEventToConversation(SendEventToConversationRequest request) {

@@ -42,7 +42,8 @@ cloudinary:
   folder: ${CLOUDINARY_FOLDER}
 
 redis-ttl:
-  socket-token-ttl: ${SOCKET_TOKEN_TTL}
+  token-socket-ttl: ${TOKEN_SOCKET_TTL}
+  presence-socket-ttl: ${PRESENCE_SOCKET_TTL}
 
 recaptcha:
   verify-url: ${RECAPTCHA_VERIFY_URL}

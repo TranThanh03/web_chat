@@ -20,6 +20,10 @@ const router = createBrowserRouter([
                 element: <page.AuthenticatePage />
             },
             {
+                path: ROUTERS.MESSAGE_PAGE,
+                element: <page.MessagePage />
+            },
+            {
                 path: ROUTERS.ERROR404_PAGE,
                 element: <page.Page404 />
             },

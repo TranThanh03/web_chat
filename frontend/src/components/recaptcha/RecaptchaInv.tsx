@@ -33,7 +33,7 @@ const RecaptchaInv = forwardRef<RecaptchaRef>((_, ref) => {
             ref={recaptchaRef}
             sitekey={import.meta.env.VITE_RECAPTCHA_INV_SITE_KEY}
             size="invisible"
-            badge="bottomright"
+            badge="bottomleft"
             hl="en"
         />
     );

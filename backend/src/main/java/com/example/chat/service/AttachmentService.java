@@ -89,7 +89,7 @@ public class AttachmentService {
             );
 
             String extension = extractExtension(item.getFileName());
-            tempAttachmentService.creatTempAttachment(
+            tempAttachmentService.create(
                     TempAttachmentCreationRequest.builder()
                             .publicId(String.format("%s/%s%s", folder, publicId, extension))
                             .userId(userId)
@@ -132,7 +132,7 @@ public class AttachmentService {
                 responses.add(messageService.atachmentMessage(conversationId, senderId, attachment.getResourceType(), List.of(attachment)));
             }
 
-            tempAttachmentService.deleteTempAttachmentByPublicId(attachment.getPublicId());
+            tempAttachmentService.deleteByPublicId(attachment.getPublicId());
         }
 
         if (!attachments.isEmpty()) {

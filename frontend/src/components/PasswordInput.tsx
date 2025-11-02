@@ -8,17 +8,19 @@ interface PasswordInputProps {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     id: string;
     name: string;
+    className: string,
     label: string;
     placeholder?: string;
+    tabIndex: number;
 }
 
-export const PasswordInput = ({ value, onChange, id, name, label, placeholder }: PasswordInputProps) => {
+export const PasswordInput = ({ value, onChange, id, name, className, label, placeholder, tabIndex }: PasswordInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
         <>
             <Label htmlFor={id}>{label}</Label>
-            <div className="relative">
+            <div className={className + " relative"}>
                 <Input
                     id={id}
                     name={name}
@@ -27,8 +29,8 @@ export const PasswordInput = ({ value, onChange, id, name, label, placeholder }:
                     value={value}
                     onChange={(e) => onChange(e)}
                     required
-                    minLength={8}
                     className="pr-10"
+                    tabIndex={tabIndex}
                 />
                 <button
                     type="button"

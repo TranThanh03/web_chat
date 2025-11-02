@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { useDialog } from "@/hooks/useDialog";
+import { emailRegex } from "@/utils/emailRegex";
+import { ERROR_MESSAGE } from "@/utils/errorMessage";
 
 type ResetStep = "email" | "otp" | "password";
 
@@ -19,9 +21,25 @@ const ResetPasswordDialog = () => {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
+    const initMsgError = {
+        email: "",
+        otp: "",
+        password: "" 
+    };
+    const [msgError, setMsgError] = useState(initMsgError);
 
     const handleEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!emailRegex(email)) {
+            setMsgError(prev => ({
+                ...prev,
+                email: ERROR_MESSAGE.EMAIL_INVALID
+            }))
+
+            return;
+        }
+
         toast.success("OTP code has been sent to your email!");
         setCurrentStep("otp");
         startResendTimer();
@@ -93,6 +111,7 @@ const ResetPasswordDialog = () => {
         setShowNewPassword(false);
         setShowConfirmPassword(false);
         setResendTimer(0);
+        setMsgError(initMsgError);
         closeDialog();
     };
 
@@ -120,7 +139,11 @@ const ResetPasswordDialog = () => {
 
     return (
         <Dialog open={dialog === "resetPassword"} onOpenChange={closeDialog}>
-            <DialogContent className="sm:max-w-106.25">
+            <DialogContent
+                className="sm:max-w-106.25"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-center">
                         {getStepTitle()}
@@ -136,12 +159,22 @@ const ResetPasswordDialog = () => {
                             <Label htmlFor="reset-email">Email Address</Label>
                             <Input
                                 id="reset-email"
-                                type="email"
+                                type="text"
+                                className="mb-1"
                                 placeholder="Enter your email address"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    setMsgError(prev => ({
+                                        ...prev,
+                                        email: ""
+                                    }));
+                                }}
                                 required
                             />
+                            <p className="text-xs text-red-500 font-medium h-4 leading-4">
+                                {msgError.email || ""}
+                            </p>
                         </div>
 
                         <Button type="submit" className="w-full" size="lg">
@@ -170,7 +203,6 @@ const ResetPasswordDialog = () => {
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
                             required
-                            maxLength={6}
                             pattern="[0-9]{6}"
                         />
                         <p className="text-xs text-muted-foreground">

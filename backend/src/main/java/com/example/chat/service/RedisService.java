@@ -12,7 +12,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -23,14 +22,18 @@ public class RedisService {
     StringRedisTemplate redisTemplate;
 
     private static final String INVALID_TOKEN_PREFIX = "invalid:token:";
-    private static final String SOCKET_TOKEN_PREFIX = "chat:socket:token:";
-    private static final String USER_SOCKET_PREFIX = "user:sockets:";
-    private static final String SOCKET_USER_PREFIX = "socket:user:";
-    private static final String USER_PRESENCE_PREFIX = "user:presence:";
+    private static final String CHAT_TOKEN_SOCKET_PREFIX = "chat:token:socket:";
+    private static final String PRESENCE_ONLINE_USERS_PREFIX = "presence:online:users";
+    private static final String PRESENCE_USER_PREFIX = "presence:user:";
+    private static final String PRESENCE_SOCKET_PREFIX = "presence:socket:";
 
     @NonFinal
-    @Value("${redis-ttl.socket-token-ttl}")
-    private long SOCKET_TOKEN_TTL;
+    @Value("${redis-ttl.token-socket-ttl}")
+    private long TOKEN_SOCKET_TTL;
+
+    @NonFinal
+    @Value("${redis-ttl.presence-socket-ttl}")
+    private long PRESENCE_SOCKET_TTL;
 
     public void setInvalidToken(String jti, long ttl) {
         try {
@@ -53,7 +56,7 @@ public class RedisService {
     public String createSocketToken(String userId) {
         try {
             String socketToken = UUID.randomUUID().toString();
-            redisTemplate.opsForValue().set(SOCKET_TOKEN_PREFIX + socketToken, userId, Duration.ofSeconds(SOCKET_TOKEN_TTL));
+            redisTemplate.opsForValue().set(CHAT_TOKEN_SOCKET_PREFIX + socketToken, userId, Duration.ofSeconds(TOKEN_SOCKET_TTL));
 
             return socketToken;
         } catch (Exception e) {
@@ -64,7 +67,7 @@ public class RedisService {
 
     public String getUserIdBySocketToken(String socketToken) {
         try {
-            return redisTemplate.opsForValue().get(SOCKET_TOKEN_PREFIX + socketToken);
+            return redisTemplate.opsForValue().get(CHAT_TOKEN_SOCKET_PREFIX + socketToken);
         } catch (Exception e) {
             log.error("Redis error: ", e);
             throw new AppException(ErrorCode.REDIS_ERROR);
@@ -73,7 +76,7 @@ public class RedisService {
 
     public void removeSocketToken(String socketToken) {
         try {
-            redisTemplate.delete(SOCKET_TOKEN_PREFIX + socketToken);
+            redisTemplate.delete(CHAT_TOKEN_SOCKET_PREFIX + socketToken);
         } catch (Exception e) {
             log.error("Redis error: ", e);
             throw new AppException(ErrorCode.REDIS_ERROR);
@@ -82,85 +85,40 @@ public class RedisService {
 
     public boolean isValidSocketToken(String socketToken) {
         try {
-            return Boolean.TRUE.equals(redisTemplate.hasKey(SOCKET_TOKEN_PREFIX + socketToken));
+            return Boolean.TRUE.equals(redisTemplate.hasKey(CHAT_TOKEN_SOCKET_PREFIX + socketToken));
         } catch (Exception e) {
             log.error("Redis error: ", e);
             throw new AppException(ErrorCode.REDIS_ERROR);
         }
     }
 
-    public void addSocketForUser(String userId, String socketId) {
-        try {
-            redisTemplate.opsForSet().add(USER_SOCKET_PREFIX + userId, socketId);
-            redisTemplate.opsForValue().set(SOCKET_USER_PREFIX + socketId, userId);
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
+    public void registerPresence(String userId, String socketId) {
+        redisTemplate.opsForSet().add(PRESENCE_USER_PREFIX + userId, socketId);
+        redisTemplate.opsForSet().add(PRESENCE_ONLINE_USERS_PREFIX, userId);
+        redisTemplate.opsForValue().set(PRESENCE_SOCKET_PREFIX + socketId, "", Duration.ofSeconds(PRESENCE_SOCKET_TTL));
+    }
+
+    public void heartbeatPresence(String socketId) {
+        String key = PRESENCE_SOCKET_PREFIX + socketId;
+
+        Boolean exists = redisTemplate.hasKey(key);
+        if (Boolean.TRUE.equals(exists)) {
+            redisTemplate.opsForValue().set(key, "", Duration.ofSeconds(PRESENCE_SOCKET_TTL));
         }
     }
 
-    public void removeSocketForUser(String userId, String socketId) {
-        try {
-            redisTemplate.opsForSet().remove(USER_SOCKET_PREFIX + userId, socketId);
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
+    public void removePresence(String userId, String socketId) {
+        redisTemplate.opsForSet().remove(PRESENCE_USER_PREFIX + userId, socketId);
+        redisTemplate.delete(PRESENCE_SOCKET_PREFIX + socketId);
+
+        Long size = redisTemplate.opsForSet().size(PRESENCE_USER_PREFIX + userId);
+        if (size == null || size == 0) {
+            redisTemplate.opsForSet().remove(PRESENCE_ONLINE_USERS_PREFIX, userId);
         }
     }
 
-    public Set<String> getAllSocketsOfUser(String userId) {
-        try {
-            return redisTemplate.opsForSet().members(USER_SOCKET_PREFIX + userId);
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
-        }
-    }
-
-    public String getUserBySocket(String socketId) {
-        try {
-            return redisTemplate.opsForValue().get(SOCKET_USER_PREFIX + socketId);
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
-        }
-    }
-
-    public boolean hasActiveSockets(String userId) {
-        try {
-            Set<String> sockets = redisTemplate.opsForSet().members(USER_SOCKET_PREFIX + userId);
-            return sockets != null && !sockets.isEmpty();
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
-        }
-    }
-
-    public void markUserOnline(String userId) {
-        try {
-            redisTemplate.opsForValue().set(USER_PRESENCE_PREFIX + userId, "online");
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
-        }
-    }
-
-    public void markUserOffline(String userId) {
-        try {
-            redisTemplate.opsForValue().set(USER_PRESENCE_PREFIX + userId, "offline");
-            redisTemplate.delete(USER_SOCKET_PREFIX + userId);
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
-        }
-    }
-
-    public void deleteSocketMapping(String socketId) {
-        try {
-            redisTemplate.delete(SOCKET_USER_PREFIX + socketId);
-        } catch (Exception e) {
-            log.error("Redis error: ", e);
-            throw new AppException(ErrorCode.REDIS_ERROR);
-        }
+    public boolean isOnline(String userId) {
+        Boolean isMember = redisTemplate.opsForSet().isMember(PRESENCE_ONLINE_USERS_PREFIX, userId);
+        return Boolean.TRUE.equals(isMember);
     }
 }

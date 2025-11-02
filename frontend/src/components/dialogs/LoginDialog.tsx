@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
 import { useDialog } from "@/hooks/useDialog";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import AuthService from "@/services/AuthService";
 import { useAuth } from "@/hooks/useAuth";
 import { ERROR_MESSAGE } from "@/utils/errorMessage";
 import RecaptchaCb from "../recaptcha/RecaptchaCb";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useSocialLogin } from "@/hooks/useSocialLogin";
+import { useNavigate } from "react-router-dom";
+import { emailRegex } from "@/utils/emailRegex";
 
 const LoginDialog = () => {
     const { login } = useAuth();
@@ -22,12 +23,19 @@ const LoginDialog = () => {
         password: "",
         recaptcha: ""
     };
+    const initMsgError = {
+        username: "",
+        general: ""
+    };
+
     const [formData, setFormData] = useState(initFormData);
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [msgError, setMsgError] = useState<string | null>(null);
+    const [msgError, setMsgError] = useState(initMsgError);
     const [disabled, setDisabled] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const recaptchaRef = useRef<ReCAPTCHA>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (formData.username && formData.password && captchaToken) {
@@ -41,19 +49,35 @@ const LoginDialog = () => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name] : value
+            [name]: value.trim()
         }));
-        setMsgError("");
+        setMsgError(prev => ({
+            ...prev,
+            [name]: "",
+            general: "",
+        }));
     };
 
     const handleCloseDialog = () => {
         setFormData(initFormData);
+        setMsgError(initMsgError);
         closeDialog();
     }
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMsgError(null);
+
+        setMsgError(initMsgError);
+        setIsLoading(true);
+
+        if (!emailRegex(formData.username)) {
+            setMsgError(prev => ({
+                ...prev,
+                username: ERROR_MESSAGE.EMAIL_INVALID
+            }))
+
+            return;
+        }
 
         try {
             const response = await AuthService.login({
@@ -64,13 +88,21 @@ const LoginDialog = () => {
             if (response?.code === 0) {
                 login(response?.result?.token);
                 setFormData(initFormData);
+                navigate("/messages", { replace: true });
             } else {
-                setMsgError(response?.message || ERROR_MESSAGE.LOGIN_FAILED);
+                setMsgError(prev => ({
+                    ...prev,
+                    general: response?.message || ERROR_MESSAGE.LOGIN_FAILED
+                }));
             }
         } catch (error: any) {
-            setMsgError(error?.data?.message || ERROR_MESSAGE.UNKNOWN_ERROR);
+            setMsgError(prev => ({
+                ...prev,
+                general: error?.data?.message || ERROR_MESSAGE.UNKNOWN_ERROR
+            }));
         } finally {
             recaptchaRef?.current?.reset();
+            setIsLoading(false);
             setCaptchaToken(null);
         }
     };
@@ -99,13 +131,17 @@ const LoginDialog = () => {
                         <Input
                             id="username"
                             name="username"
-                            type="email"
+                            type="text"
                             placeholder="Enter your email"
                             value={formData.username}
                             onChange={handleChange}
                             required
                             tabIndex={1}
                         />
+
+                        <p className="text-xs text-red-500 font-medium">
+                            {msgError.username || ""}
+                        </p>
                     </div>
                     
                     <div className="space-y-2">
@@ -145,14 +181,17 @@ const LoginDialog = () => {
                         </div>
 
                         <p className="text-xs text-red-500 font-medium h-4 leading-4">
-                            {msgError || ""}
+                            {msgError.general || ""}
                         </p>
                     </div>
 
                     <RecaptchaCb ref={recaptchaRef} onChange={setCaptchaToken} tabIndex={3}/>
 
-                    <Button type="submit" className="w-full hover:bg-blue-600 transition" size="lg" tabIndex={4} disabled={disabled}>
-                        Login
+                    <Button type="submit" className="w-full hover:bg-blue-600 transition" size="lg" tabIndex={4} disabled={disabled || isLoading}>
+                        {isLoading ?
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            : 'Login'
+                        }
                     </Button>
                 </form>
 

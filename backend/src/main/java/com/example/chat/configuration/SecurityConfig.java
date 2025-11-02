@@ -37,7 +37,7 @@ public class SecurityConfig {
 
     public static final String[] POST_PUBLIC_ENDPOINTS = {
         "/auth/login/local", "/auth/login/oauth",
-        "/accounts"
+        "/accounts/register"
     };
 
     public static final String[] PATCH_PUBLIC_ENDPOINTS = {
